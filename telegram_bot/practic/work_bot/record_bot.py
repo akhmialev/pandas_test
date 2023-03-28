@@ -12,6 +12,28 @@ dp = Dispatcher(bot)
 async def on_startup(_):
     print("Бот включен")
 
+def record_to_db(dct):
+    print(dct)
+
+def create_dct_for_db(date):
+    """
+    функция для формирование словаря что бы записывать в БД
+    :param date: данные для записи
+        trainer - имя и фамилия терена
+        training_time - время на которое записался человек
+        training_date - дата на которую записался человек
+    """
+    trainer, training_time, training_date = date
+    trainer = trainer.split(' ')
+    dct = {
+        'name': trainer[0],
+        'lname': trainer[1],
+        'time': training_time,
+        'training_date': training_date
+
+    }
+    record_to_db(dct)
+
 
 def get_mount_right_case():
     """
@@ -54,6 +76,7 @@ async def send_choice_all_trainers(msg: types.Message):
     :return:
     """
     if 'записаться' in msg.text.lower():
+        # здесь должно быть подключение к бд и вывод всех тренеров(я пока испольльзовал просто список trainers с dict)
         trainers_button = []
         for element in trainers:
             name = element['name']
@@ -112,7 +135,7 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
         button_text = today.strftime('%d.%m')
         if button_text not in week_days:
             buttons.append(InlineKeyboardButton(text=button_text,
-                                                callback_data=f'record_{today.strftime("%d.%m.%y")}'))
+                                                callback_data=f'record_{today.strftime("%d.%m.%y")}_{trainer}'))
         else:
             buttons.append(InlineKeyboardButton(text='выходной',
                                                 callback_data=f'week_{button_text}_{trainer}'))
@@ -123,11 +146,46 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
     await bot.send_message(chat_id=cb.from_user.id, text=calendar_msg, reply_markup=ikb)
 
 
+@dp.callback_query_handler(lambda c: c.data.startswith('record_'))
+async def send_time_for_record(cb: types.CallbackQuery):
+    """
+    Функция выводит меню времени для записи
+    """
+    list_data = cb.data.split('_')
+    date = list_data[1]
+    trainer = list_data[2]
+
+    text_message = f'Выберите время для записи к {trainer}:'
+    ikb = InlineKeyboardMarkup()
+    buttons = []
+    for hour in range(7, 24):
+        start_time = f'{hour:02d}:00'
+        end_time = f'{hour + 1:02d}:00'
+        training_time = f"{start_time} - {end_time}"
+        buttons.append(
+            InlineKeyboardButton(text=training_time, callback_data=f'finish record_{date}_{training_time}_{trainer}'))
+    ikb.add(*buttons)
+
+    await bot.send_message(chat_id=cb.from_user.id, text=text_message, reply_markup=ikb)
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith('finish '))
+async def finish_record_and_add_to_db(cd: types.CallbackQuery):
+    list_data = cd.data.split('_')
+    trainer = list_data[3]
+    training_time = list_data[2]
+    training_date = list_data[1]
+    text_message = f'Вы записаны {training_date} к тренеру {trainer} на время {training_time}'
+    data = trainer, training_time, training_date
+    create_dct_for_db(data)
+    await bot.send_message(chat_id=cd.from_user.id, text=text_message)
+
+    #тут надо сделать что то чтобы после клиент не мог записываться
 
 @dp.callback_query_handler(lambda c: c.data.startswith('week_'))
 async def send_record_time(cb: types.CallbackQuery):
     """
-    Функция для отображения текса если пытаются записаться на выходной день
+    Функция для отображения текста если пытаются записаться на выходной день
     """
     list_data = cb.data.split('_')
     status = list_data[0]
@@ -136,7 +194,6 @@ async def send_record_time(cb: types.CallbackQuery):
 
     if status == 'week':
         await bot.answer_callback_query(callback_query_id=cb.id, text=f'У {trainer} {week_day} не рабочий день')
-
 
 
 if __name__ == '__main__':
