@@ -1,5 +1,4 @@
-import datetime, calendar
-import locale
+import datetime
 
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
@@ -19,11 +18,11 @@ def record_to_db(dct):
 
 def create_dct_for_db(date):
     """
-    функция для формирование словаря что бы записывать в БД
+    Функция для формированья словаря, что бы записывать в БД
     :param date: данные для записи
         trainer - имя и фамилия терена
-        training_time - время на которое записался человек
-        training_date - дата на которую записался человек
+        training_time - время записи клиента
+        training_date - дата записи клиента
     """
     trainer, training_time, training_date = date
     trainer = trainer.split(' ')
@@ -40,8 +39,7 @@ def create_dct_for_db(date):
 
 def get_mount_right_case():
     """
-        Функиця ставит месяц в именительный падеж
-    :return:
+    Функция ставит месяц в именительный падеж
     """
     mount = ['Январе', 'Феврале', 'Марте', 'Апреле', 'Мае', 'Июне', 'Июле', 'Августе', 'Сентябре', 'Октябре', 'Ноябре',
              'Декабре']
@@ -53,9 +51,9 @@ def get_mount_right_case():
 
 def get_week_date(tr_id):
     """
-    Функиця берет список вызодных дат тренева по его id
-    :param tr_id: приходит id терена
-    :return: возврашает список выходных дат
+    Функция берет список выходных дат тренера по его id
+    :param tr_id: id тренера
+    :return: возвращает список выходных дат
     """
     for trainer in trainers:
         if trainer['id'] == int(tr_id):
@@ -79,7 +77,7 @@ async def send_choice_all_trainers(msg: types.Message):
     :return:
     """
     if 'записаться' in msg.text.lower():
-        # здесь должно быть подключение к бд и вывод всех тренеров(я пока испольльзовал просто список trainers с dict)
+        # здесь должно быть подключение к бд и вывод всех тренеров(я пока использовал просто список trainers с dict)
         trainers_button = []
         for element in trainers:
             name = element['name']
@@ -102,10 +100,11 @@ async def send_choice_all_trainers(msg: types.Message):
 async def calendar_record_trainers(cb: types.CallbackQuery):
     """
     Функция выводит рабочие даты тренера.
-    :param cb: колбек дата тут приходит название обьекта(терена), мы забираем из БД его рабочие дни и выводим
+    :param cb: coll back дата тут приходит название объекта(терена), мы забираем из БД его рабочие дни и выводим
     Вывод текущий день + 28 дней
     """
-    # в коде ниже брал даты из бд( суть в том что тренер вносит свой рабочий график на месяц и так формируется календарь)
+    # в коде ниже брал даты из бд - суть в том что тренер вносит свой
+    # рабочий график на месяц и так формируется календарь
 
     # locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
     # trainer = cb.data.split('_')[1]
@@ -124,7 +123,7 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
     # await bot.send_message(chat_id=cb.from_user.id, text=calendar_message,
     #                        reply_markup=date_keyboard)
 
-    # тут просто формирую календарь на текуший день + 4 недели вперед(есть проверка на выходные дни)
+    # тут просто формирую календарь на текущий день + 4 недели вперед(есть проверка на выходные дни)
     trainer = cb.data.split('_')[1]
     tr_id = cb.data.split('_')[2]
     calendar_msg = f"Выберете дату занятия с {trainer}:"
@@ -183,7 +182,7 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     data = trainer, training_time, training_date
     create_dct_for_db(data)
 
-    # тут надо сделать что то чтобы после клиент не мог записываться
+    # тут надо сделать что-то чтобы после клиент не мог записываться
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('week_'))
