@@ -12,8 +12,10 @@ dp = Dispatcher(bot)
 async def on_startup(_):
     print("Бот включен")
 
+
 def record_to_db(dct):
     print(dct)
+
 
 def create_dct_for_db(date):
     """
@@ -25,6 +27,7 @@ def create_dct_for_db(date):
     """
     trainer, training_time, training_date = date
     trainer = trainer.split(' ')
+    training_date = '.'.join(training_date.split('.')[1:])
     dct = {
         'name': trainer[0],
         'lname': trainer[1],
@@ -61,11 +64,11 @@ def get_week_date(tr_id):
 
 @dp.message_handler(commands='start')
 async def menu(msg: types.Message):
-    kb = ReplyKeyboardMarkup(one_time_keyboard=True)
+    kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     b1 = KeyboardButton(text='Удалить_запись')
     b2 = KeyboardButton(text='Записаться')
     kb.add(b2, b1)
-    await msg.answer(text='Сделайте выбор', reply_markup=kb)
+    await bot.send_message(chat_id=msg.from_user.id, text='Сделайте выбор', reply_markup=kb)
 
 
 @dp.message_handler()
@@ -88,7 +91,7 @@ async def send_choice_all_trainers(msg: types.Message):
         ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2)
         ikb.add(*trainers_button)
 
-        await msg.answer(text='Выберите тренера', reply_markup=ikb)
+        await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренера', reply_markup=ikb)
     else:
         """
             здесь код для удаления записи
@@ -176,11 +179,12 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     training_time = list_data[2]
     training_date = list_data[1]
     text_message = f'Вы записаны {training_date} к тренеру {trainer} на время {training_time}'
+    await bot.send_message(chat_id=cd.from_user.id, text=text_message)
     data = trainer, training_time, training_date
     create_dct_for_db(data)
-    await bot.send_message(chat_id=cd.from_user.id, text=text_message)
 
-    #тут надо сделать что то чтобы после клиент не мог записываться
+    # тут надо сделать что то чтобы после клиент не мог записываться
+
 
 @dp.callback_query_handler(lambda c: c.data.startswith('week_'))
 async def send_record_time(cb: types.CallbackQuery):
