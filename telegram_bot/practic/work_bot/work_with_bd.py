@@ -1,6 +1,7 @@
 import pymongo
 
 
+
 def connect_to_mongodb(host, port):
     """
         функиця подключения к базе данных
