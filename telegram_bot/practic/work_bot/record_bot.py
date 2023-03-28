@@ -1,7 +1,8 @@
 import datetime
+import locale
 
 from aiogram import Bot, Dispatcher, types, executor
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, CallbackGame
 from test_data import trainers, TOKEN
 
 bot = Bot(token=TOKEN)
@@ -60,8 +61,14 @@ def get_week_date(tr_id):
             return trainer['week_day']
 
 
+user_activiti_day = {}
+
+
 @dp.message_handler(commands='start')
 async def menu(msg: types.Message):
+    """
+    Функция создает стартовое меню
+    """
     kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     b1 = KeyboardButton(text='Удалить_запись')
     b2 = KeyboardButton(text='Записаться')
@@ -88,7 +95,6 @@ async def send_choice_all_trainers(msg: types.Message):
             trainers_button.append(button)
         ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2)
         ikb.add(*trainers_button)
-
         await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренера', reply_markup=ikb)
     else:
         """
@@ -103,47 +109,30 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
     :param cb: coll back дата тут приходит название объекта(терена), мы забираем из БД его рабочие дни и выводим
     Вывод текущий день + 28 дней
     """
-    # в коде ниже брал даты из бд - суть в том что тренер вносит свой
-    # рабочий график на месяц и так формируется календарь
 
-    # locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
-    # trainer = cb.data.split('_')[1]
-    # tr_id = cb.data.split('_')[2]
-    #
-    # now, mount = get_mount_right_case()
-    # calendar_message = f'Выберете дату занятия с {trainer} в {mount}:'
-    # dates = get_data(tr_id) #изменил на get_week_day потому что нижнего кода нужно брать выходные дни
-    # date_buttons = []
-    # for all_day in dates:
-    #     for day in all_day:
-    #         if day > now.day:
-    #             date_buttons.append(types.InlineKeyboardButton(text=day, callback_data=f"data_{day}_{trainer}"))
-    # date_keyboard = InlineKeyboardMarkup(row_width=4)
-    # date_keyboard.add(*date_buttons)
-    # await bot.send_message(chat_id=cb.from_user.id, text=calendar_message,
-    #                        reply_markup=date_keyboard)
+    # тут просто формирую календарь на текущий день + 4 недели вперед с проверкой на выходные дни
+    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
 
-    # тут просто формирую календарь на текущий день + 4 недели вперед(есть проверка на выходные дни)
     trainer = cb.data.split('_')[1]
     tr_id = cb.data.split('_')[2]
     calendar_msg = f"Выберете дату занятия с {trainer}:"
 
     today = datetime.datetime.today()
     end_data = today + datetime.timedelta(days=28)
-
     week_days = get_week_date(tr_id)
     buttons = []
     while today <= end_data:
-        button_text = today.strftime('%d.%m')
-        if button_text not in week_days:
+        comparison = today.strftime('%d.%m')
+        button_text = today.strftime('%a %d.%m')
+        if comparison not in week_days:
             buttons.append(InlineKeyboardButton(text=button_text,
                                                 callback_data=f'record_{today.strftime("%d.%m.%y")}_{trainer}'))
         else:
-            buttons.append(InlineKeyboardButton(text='выходной',
+            buttons.append(InlineKeyboardButton(text='🚫',
                                                 callback_data=f'week_{button_text}_{trainer}'))
         today += datetime.timedelta(days=1)
 
-    ikb = InlineKeyboardMarkup(row_width=3)
+    ikb = InlineKeyboardMarkup(row_width=4)
     ikb.add(*buttons)
     await bot.send_message(chat_id=cb.from_user.id, text=calendar_msg, reply_markup=ikb)
 
@@ -173,16 +162,24 @@ async def send_time_for_record(cb: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data.startswith('finish '))
 async def finish_record_and_add_to_db(cd: types.CallbackQuery):
+    """
+    Функция делает запись на определенное время и делает проверку, записаться можно только раз в день
+    """
+    user_id = cd.from_user.id
+    if user_id in user_activiti_day and user_activiti_day[user_id] == datetime.datetime.now().date():
+        await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
+
     list_data = cd.data.split('_')
     trainer = list_data[3]
     training_time = list_data[2]
     training_date = list_data[1]
     text_message = f'Вы записаны {training_date} к тренеру {trainer} на время {training_time}'
+
     await bot.send_message(chat_id=cd.from_user.id, text=text_message)
+    user_activiti_day[user_id] = datetime.datetime.now().date()
+    print(user_activiti_day)
     data = trainer, training_time, training_date
     create_dct_for_db(data)
-
-    # тут надо сделать что-то чтобы после клиент не мог записываться
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('week_'))
