@@ -118,12 +118,15 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
     calendar_msg = f"Выберете дату занятия с {trainer}:"
 
     today = datetime.datetime.today()
-    end_data = today + datetime.timedelta(days=28)
+    end_data = today + datetime.timedelta(days=29)
     week_days = get_week_date(tr_id)
     buttons = []
+    for i in range(6):
+        buttons.append(InlineKeyboardButton(text=today.strftime('%a'), callback_data='123'))
+        today += datetime.timedelta(days=1)
     while today <= end_data:
         comparison = today.strftime('%d.%m')
-        button_text = today.strftime('%a %d.%m')
+        button_text = today.strftime('%d.%m')
         if comparison not in week_days:
             buttons.append(InlineKeyboardButton(text=button_text,
                                                 callback_data=f'record_{today.strftime("%d.%m.%y")}_{trainer}'))
@@ -132,7 +135,7 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
                                                 callback_data=f'week_{button_text}_{trainer}'))
         today += datetime.timedelta(days=1)
 
-    ikb = InlineKeyboardMarkup(row_width=4)
+    ikb = InlineKeyboardMarkup(row_width=6)
     ikb.add(*buttons)
     await bot.send_message(chat_id=cb.from_user.id, text=calendar_msg, reply_markup=ikb)
 
