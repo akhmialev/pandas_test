@@ -1,0 +1,143 @@
+import datetime, calendar
+import locale
+
+from aiogram import Bot, Dispatcher, types, executor
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+from test_data import trainers, TOKEN
+
+bot = Bot(token=TOKEN)
+dp = Dispatcher(bot)
+
+
+async def on_startup(_):
+    print("Бот включен")
+
+
+def get_mount_right_case():
+    """
+        Функиця ставит месяц в именительный падеж
+    :return:
+    """
+    mount = ['Январе', 'Феврале', 'Марте', 'Апреле', 'Мае', 'Июне', 'Июле', 'Августе', 'Сентябре', 'Октябре', 'Ноябре',
+             'Декабре']
+
+    now = datetime.datetime.now()
+    mount = mount[now.month - 1]
+    return now, mount
+
+
+def get_week_date(tr_id):
+    """
+    Функиця берет список вызодных дат тренева по его id
+    :param tr_id: приходит id терена
+    :return: возврашает список выходных дат
+    """
+    for trainer in trainers:
+        if trainer['id'] == int(tr_id):
+            return trainer['week_day']
+
+
+@dp.message_handler(commands='start')
+async def menu(msg: types.Message):
+    kb = ReplyKeyboardMarkup(one_time_keyboard=True)
+    b1 = KeyboardButton(text='Удалить_запись')
+    b2 = KeyboardButton(text='Записаться')
+    kb.add(b2, b1)
+    await msg.answer(text='Сделайте выбор', reply_markup=kb)
+
+
+@dp.message_handler()
+async def send_choice_all_trainers(msg: types.Message):
+    """
+    Функция вывода выбора тренеров
+    :param msg:
+    :return:
+    """
+    if 'записаться' in msg.text.lower():
+        trainers_button = []
+        for element in trainers:
+            name = element['name']
+            lname = element['lname']
+            tr_id = element['id']
+            fullname = name + ' ' + lname
+            button = InlineKeyboardButton(text=fullname, callback_data=f"trainer_{fullname}_{tr_id}")
+            trainers_button.append(button)
+        ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2)
+        ikb.add(*trainers_button)
+
+        await msg.answer(text='Выберите тренера', reply_markup=ikb)
+    else:
+        """
+            здесь код для удаления записи
+        """
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith('trainer_'))
+async def calendar_record_trainers(cb: types.CallbackQuery):
+    """
+    Функция выводит рабочие даты тренера.
+    :param cb: колбек дата тут приходит название обьекта(терена), мы забираем из БД его рабочие дни и выводим
+    Вывод текущий день + 28 дней
+    """
+    # в коде ниже брал даты из бд( суть в том что тренер вносит свой рабочий график на месяц и так формируется календарь)
+
+    # locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+    # trainer = cb.data.split('_')[1]
+    # tr_id = cb.data.split('_')[2]
+    #
+    # now, mount = get_mount_right_case()
+    # calendar_message = f'Выберете дату занятия с {trainer} в {mount}:'
+    # dates = get_data(tr_id) #изменил на get_week_day потому что нижнего кода нужно брать выходные дни
+    # date_buttons = []
+    # for all_day in dates:
+    #     for day in all_day:
+    #         if day > now.day:
+    #             date_buttons.append(types.InlineKeyboardButton(text=day, callback_data=f"data_{day}_{trainer}"))
+    # date_keyboard = InlineKeyboardMarkup(row_width=4)
+    # date_keyboard.add(*date_buttons)
+    # await bot.send_message(chat_id=cb.from_user.id, text=calendar_message,
+    #                        reply_markup=date_keyboard)
+
+    # тут просто формирую календарь на текуший день + 4 недели вперед(есть проверка на выходные дни)
+    trainer = cb.data.split('_')[1]
+    tr_id = cb.data.split('_')[2]
+    calendar_msg = f"Выберете дату занятия с {trainer}:"
+
+    today = datetime.datetime.today()
+    end_data = today + datetime.timedelta(days=28)
+
+    week_days = get_week_date(tr_id)
+    buttons = []
+    while today <= end_data:
+        button_text = today.strftime('%d.%m')
+        if button_text not in week_days:
+            buttons.append(InlineKeyboardButton(text=button_text,
+                                                callback_data=f'record_{today.strftime("%d.%m.%y")}'))
+        else:
+            buttons.append(InlineKeyboardButton(text='выходной',
+                                                callback_data=f'week_{button_text}_{trainer}'))
+        today += datetime.timedelta(days=1)
+
+    ikb = InlineKeyboardMarkup(row_width=3)
+    ikb.add(*buttons)
+    await bot.send_message(chat_id=cb.from_user.id, text=calendar_msg, reply_markup=ikb)
+
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith('week_'))
+async def send_record_time(cb: types.CallbackQuery):
+    """
+    Функция для отображения текса если пытаются записаться на выходной день
+    """
+    list_data = cb.data.split('_')
+    status = list_data[0]
+    week_day = list_data[1]
+    trainer = list_data[2]
+
+    if status == 'week':
+        await bot.answer_callback_query(callback_query_id=cb.id, text=f'У {trainer} {week_day} не рабочий день')
+
+
+
+if __name__ == '__main__':
+    executor.start_polling(dp, on_startup=on_startup, skip_updates=True)
