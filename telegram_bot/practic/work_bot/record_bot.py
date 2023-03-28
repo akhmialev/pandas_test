@@ -2,7 +2,7 @@ import datetime
 import locale
 
 from aiogram import Bot, Dispatcher, types, executor
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, CallbackGame
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from test_data import trainers, TOKEN
 
 bot = Bot(token=TOKEN)
@@ -168,18 +168,18 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     user_id = cd.from_user.id
     if user_id in user_activiti_day and user_activiti_day[user_id] == datetime.datetime.now().date():
         await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
+    else:
+        list_data = cd.data.split('_')
+        trainer = list_data[3]
+        training_time = list_data[2]
+        training_date = list_data[1]
+        text_message = f'Вы записаны {training_date} к тренеру {trainer} на время {training_time}'
 
-    list_data = cd.data.split('_')
-    trainer = list_data[3]
-    training_time = list_data[2]
-    training_date = list_data[1]
-    text_message = f'Вы записаны {training_date} к тренеру {trainer} на время {training_time}'
-
-    await bot.send_message(chat_id=cd.from_user.id, text=text_message)
-    user_activiti_day[user_id] = datetime.datetime.now().date()
-    print(user_activiti_day)
-    data = trainer, training_time, training_date
-    create_dct_for_db(data)
+        await bot.send_message(chat_id=cd.from_user.id, text=text_message)
+        user_activiti_day[user_id] = datetime.datetime.now().date()
+        print(user_activiti_day)
+        data = trainer, training_time, training_date
+        create_dct_for_db(data)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('week_'))
