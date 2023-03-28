@@ -108,6 +108,7 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
     Функция выводит рабочие даты тренера.
     :param cb: coll back дата тут приходит название объекта(терена), мы забираем из БД его рабочие дни и выводим
     Вывод текущий день + 28 дней
+    Первая строка день неделе - для корректного изображения максимум 6 дней можно выводит и 30 дат, иначе не влазит!!!
     """
 
     # тут просто формирую календарь на текущий день + 4 недели вперед с проверкой на выходные дни
@@ -121,7 +122,8 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
     end_data = today + datetime.timedelta(days=29)
     week_days = get_week_date(tr_id)
     buttons = []
-    for i in range(6):
+    days_in_week = 6
+    for i in range(days_in_week):
         buttons.append(InlineKeyboardButton(text=today.strftime('%a'), callback_data='123'))
         today += datetime.timedelta(days=1)
     while today <= end_data:
