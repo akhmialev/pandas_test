@@ -165,6 +165,8 @@ async def send_time_for_record(cb: types.CallbackQuery):
     """
     Функция выводит меню времени для записи
     """
+    # тут было бы неплохо сделать еще проверку на время работы тренера(он может работать не по дефолтному графику)
+    # у меня тут график с 7 до 24 часов.
     list_data = cb.data.split('_')
     date = list_data[1]
     trainer = list_data[2]
