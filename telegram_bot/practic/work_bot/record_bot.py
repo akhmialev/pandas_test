@@ -7,6 +7,7 @@ from test_data import trainers, TOKEN
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
+user_activiti_day = {}
 
 
 async def on_startup(_):
@@ -15,6 +16,43 @@ async def on_startup(_):
 
 def record_to_db(dct):
     print(dct)
+
+
+def create_calendar(trainer, tr_id):
+    """
+    Функция создает календарь с текущим днем плюс 4 недели, так же учитывает выходные дни тренера,
+     ставит вместо даты стикер.
+    :param trainer: имя фамилия тренера.
+    :param tr_id: id тренера из базы данных.
+    """
+    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+    holiday_days = get_holiday_date(tr_id)
+    ikb = InlineKeyboardMarkup(row_width=7)
+    week_days = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
+    buttons = []
+    today = datetime.datetime.today()
+
+    for day in week_days:
+        buttons.append(InlineKeyboardButton(text=day, callback_data=f'day_week_{day}'))
+    ikb.row(*buttons)
+
+    row = []
+    for week in range(4):
+        for day in week_days:
+            button_text = today.strftime("%d")
+            if today.strftime('%a') == str(day):
+                comparison = today.strftime('%d.%m')
+                if comparison not in holiday_days:
+                    row.append(InlineKeyboardButton(text=f'{button_text}',
+                                                    callback_data=f'record_{today.strftime("%d.%m.%y")}_{trainer}'))
+                else:
+                    row.append(InlineKeyboardButton(text='🚫', callback_data=f'week_{button_text}_{trainer}'))
+                today += datetime.timedelta(days=1)
+            else:
+                row.append(InlineKeyboardButton(text=' ', callback_data='ignore'))
+    ikb.add(*row)
+
+    return ikb
 
 
 def create_dct_for_db(date):
@@ -38,19 +76,7 @@ def create_dct_for_db(date):
     record_to_db(dct)
 
 
-def get_mount_right_case():
-    """
-    Функция ставит месяц в именительный падеж
-    """
-    mount = ['Январе', 'Феврале', 'Марте', 'Апреле', 'Мае', 'Июне', 'Июле', 'Августе', 'Сентябре', 'Октябре', 'Ноябре',
-             'Декабре']
-
-    now = datetime.datetime.now()
-    mount = mount[now.month - 1]
-    return now, mount
-
-
-def get_week_date(tr_id):
+def get_holiday_date(tr_id):
     """
     Функция берет список выходных дат тренера по его id
     :param tr_id: id тренера
@@ -59,9 +85,6 @@ def get_week_date(tr_id):
     for trainer in trainers:
         if trainer['id'] == int(tr_id):
             return trainer['week_day']
-
-
-user_activiti_day = {}
 
 
 @dp.message_handler(commands='start')
@@ -80,8 +103,6 @@ async def menu(msg: types.Message):
 async def send_choice_all_trainers(msg: types.Message):
     """
     Функция вывода выбора тренеров
-    :param msg:
-    :return:
     """
     if 'записаться' in msg.text.lower():
         # здесь должно быть подключение к бд и вывод всех тренеров(я пока использовал просто список trainers с dict)
@@ -102,44 +123,41 @@ async def send_choice_all_trainers(msg: types.Message):
         """
 
 
+@dp.callback_query_handler(lambda c: c.data.startswith('ignore'))
+async def calendar_empty_days(cb: types.CallbackQuery):
+    await bot.answer_callback_query(callback_query_id=cb.id)
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith('day_week_'))
+async def calendar_days_click(cb: types.CallbackQuery):
+    """
+    Функция для отображения полного названия месяца при клике в календаре на месяц
+    """
+    day = cb.data.split('_')[2]
+    days_dct = {
+        'пн': 'Понедельник',
+        'вт': 'Вторник',
+        'ср': 'Среда',
+        'чт': 'Четверг',
+        'пт': 'Пятница',
+        'сб': 'Суббота',
+        'вс': 'Воскресение',
+
+    }
+    if str(day) in days_dct:
+        await bot.answer_callback_query(callback_query_id=cb.id, text=f'{days_dct[str(day)]}')
+
+
 @dp.callback_query_handler(lambda c: c.data.startswith('trainer_'))
 async def calendar_record_trainers(cb: types.CallbackQuery):
     """
     Функция выводит рабочие даты тренера.
-    :param cb: coll back дата тут приходит название объекта(терена), мы забираем из БД его рабочие дни и выводим
-    Вывод текущий день + 28 дней
-    Первая строка день неделе - для корректного изображения максимум 6 дней можно выводит и 30 дат, иначе не влазит!!!
     """
-
-    # тут просто формирую календарь на текущий день + 4 недели вперед с проверкой на выходные дни
-    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
-
     trainer = cb.data.split('_')[1]
     tr_id = cb.data.split('_')[2]
-    calendar_msg = f"Выберете дату занятия с {trainer}:"
-
-    today = datetime.datetime.today()
-    end_data = today + datetime.timedelta(days=29)
-    week_days = get_week_date(tr_id)
-    buttons = []
-    days_in_week = 6
-    for i in range(days_in_week):
-        buttons.append(InlineKeyboardButton(text=today.strftime('%a'), callback_data='123'))
-        today += datetime.timedelta(days=1)
-    while today <= end_data:
-        comparison = today.strftime('%d.%m')
-        button_text = today.strftime('%d.%m')
-        if comparison not in week_days:
-            buttons.append(InlineKeyboardButton(text=button_text,
-                                                callback_data=f'record_{today.strftime("%d.%m.%y")}_{trainer}'))
-        else:
-            buttons.append(InlineKeyboardButton(text='🚫',
-                                                callback_data=f'week_{button_text}_{trainer}'))
-        today += datetime.timedelta(days=1)
-
-    ikb = InlineKeyboardMarkup(row_width=6)
-    ikb.add(*buttons)
-    await bot.send_message(chat_id=cb.from_user.id, text=calendar_msg, reply_markup=ikb)
+    calendar_msg = f"Выберете дату занятия с {trainer}: "
+    calendar_markup = create_calendar(trainer, tr_id)
+    await bot.send_message(chat_id=cb.from_user.id, text=calendar_msg, reply_markup=calendar_markup)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('record_'))
@@ -151,7 +169,7 @@ async def send_time_for_record(cb: types.CallbackQuery):
     date = list_data[1]
     trainer = list_data[2]
 
-    text_message = f'Выберите время для записи к {trainer}:'
+    text_message = f'Выберите время для записи к {trainer} на {date}:'
     ikb = InlineKeyboardMarkup()
     buttons = []
     for hour in range(7, 24):
@@ -161,8 +179,22 @@ async def send_time_for_record(cb: types.CallbackQuery):
         buttons.append(
             InlineKeyboardButton(text=training_time, callback_data=f'finish record_{date}_{training_time}_{trainer}'))
     ikb.add(*buttons)
-
+    await bot.answer_callback_query(callback_query_id=cb.id)
     await bot.send_message(chat_id=cb.from_user.id, text=text_message, reply_markup=ikb)
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith('week_'))
+async def send_record_time_week_day(cb: types.CallbackQuery):
+    """
+    Функция для отображения текста если пытаются записаться на выходной день
+    """
+    list_data = cb.data.split('_')
+    status = list_data[0]
+    week_day = list_data[1]
+    trainer = list_data[2]
+
+    if status == 'week':
+        await bot.answer_callback_query(callback_query_id=cb.id, text=f'У {trainer} {week_day} не рабочий день')
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('finish '))
@@ -180,25 +212,12 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
         training_date = list_data[1]
         text_message = f'Вы записаны {training_date} к тренеру {trainer} на время {training_time}'
 
+        await bot.answer_callback_query(callback_query_id=cd.id)
         await bot.send_message(chat_id=cd.from_user.id, text=text_message)
         user_activiti_day[user_id] = datetime.datetime.now().date()
         print(user_activiti_day)
         data = trainer, training_time, training_date
         create_dct_for_db(data)
-
-
-@dp.callback_query_handler(lambda c: c.data.startswith('week_'))
-async def send_record_time(cb: types.CallbackQuery):
-    """
-    Функция для отображения текста если пытаются записаться на выходной день
-    """
-    list_data = cb.data.split('_')
-    status = list_data[0]
-    week_day = list_data[1]
-    trainer = list_data[2]
-
-    if status == 'week':
-        await bot.answer_callback_query(callback_query_id=cb.id, text=f'У {trainer} {week_day} не рабочий день')
 
 
 if __name__ == '__main__':
