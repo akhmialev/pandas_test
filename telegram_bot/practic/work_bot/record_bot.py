@@ -3,7 +3,9 @@ import locale
 
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
-from test_data import trainers, TOKEN
+from config import TOKEN
+
+from work_with_bd import send_all_trainers
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -11,7 +13,7 @@ user_activiti_day = {}
 
 
 async def on_startup(_):
-    print("Бот включен")
+    print('Бот включен')
 
 
 def record_to_db(dct):
@@ -28,7 +30,7 @@ def create_calendar(trainer, tr_id):
     locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
     holiday_days = get_holiday_date(tr_id)
     ikb = InlineKeyboardMarkup(row_width=7)
-    week_days = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
+    week_days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
     buttons = []
     today = datetime.datetime.today()
 
@@ -39,14 +41,15 @@ def create_calendar(trainer, tr_id):
     row = []
     for week in range(4):
         for day in week_days:
-            button_text = today.strftime("%d")
+            button_text = today.strftime('%d')
+            week_button_text = today.strftime('%d.%m')
             if today.strftime('%a') == str(day):
                 comparison = today.strftime('%d.%m')
                 if comparison not in holiday_days:
                     row.append(InlineKeyboardButton(text=f'{button_text}',
                                                     callback_data=f'record_{today.strftime("%d.%m.%y")}_{trainer}'))
                 else:
-                    row.append(InlineKeyboardButton(text='🚫', callback_data=f'week_{button_text}_{trainer}'))
+                    row.append(InlineKeyboardButton(text='🚫', callback_data=f'week_{week_button_text}_{trainer}'))
                 today += datetime.timedelta(days=1)
             else:
                 row.append(InlineKeyboardButton(text=' ', callback_data='ignore'))
@@ -82,8 +85,11 @@ def get_holiday_date(tr_id):
     :param tr_id: id тренера
     :return: возвращает список выходных дат
     """
+    trainers = send_all_trainers()
+
     for trainer in trainers:
-        if trainer['id'] == int(tr_id):
+        trainer_id = trainer['_id']
+        if str(trainer_id) == tr_id:
             return trainer['week_day']
 
 
@@ -107,14 +113,16 @@ async def send_choice_all_trainers(msg: types.Message):
     if 'записаться' in msg.text.lower():
         # здесь должно быть подключение к бд и вывод всех тренеров(я пока использовал просто список trainers с dict)
         trainers_button = []
+        trainers = send_all_trainers()
+
         for element in trainers:
             name = element['name']
             lname = element['lname']
-            tr_id = element['id']
+            tr_id = element['_id']
             fullname = name + ' ' + lname
-            button = InlineKeyboardButton(text=fullname, callback_data=f"trainer_{fullname}_{tr_id}")
+            button = InlineKeyboardButton(text=fullname, callback_data=f'trainer_{fullname}_{tr_id}')
             trainers_button.append(button)
-        ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=2)
+        ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
         ikb.add(*trainers_button)
         await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренера', reply_markup=ikb)
     else:
@@ -155,7 +163,7 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
     """
     trainer = cb.data.split('_')[1]
     tr_id = cb.data.split('_')[2]
-    calendar_msg = f"Выберете дату занятия с {trainer}: "
+    calendar_msg = f'Выберете дату занятия с {trainer}: '
     calendar_markup = create_calendar(trainer, tr_id)
     await bot.send_message(chat_id=cb.from_user.id, text=calendar_msg, reply_markup=calendar_markup)
 
@@ -177,7 +185,7 @@ async def send_time_for_record(cb: types.CallbackQuery):
     for hour in range(7, 24):
         start_time = f'{hour:02d}:00'
         end_time = f'{hour + 1:02d}:00'
-        training_time = f"{start_time} - {end_time}"
+        training_time = f'{start_time} - {end_time}'
         buttons.append(
             InlineKeyboardButton(text=training_time, callback_data=f'finish record_{date}_{training_time}_{trainer}'))
     ikb.add(*buttons)
@@ -205,6 +213,7 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     Функция делает запись на определенное время и делает проверку, записаться можно только раз в день
     """
     user_id = cd.from_user.id
+
     if user_id in user_activiti_day and user_activiti_day[user_id] == datetime.datetime.now().date():
         await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
     else:
