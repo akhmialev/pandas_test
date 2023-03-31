@@ -167,7 +167,8 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
     tr_id = cb.data.split('_')[2]
     calendar_msg = f'Выберете дату занятия с {trainer}: '
     calendar_markup = create_calendar(trainer, tr_id)
-    await bot.send_message(chat_id=cb.from_user.id, text=calendar_msg, reply_markup=calendar_markup)
+    await bot.edit_message_text(chat_id=cb.from_user.id, text=calendar_msg, message_id=cb.message.message_id,
+                                reply_markup=calendar_markup)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('record_'))
@@ -193,7 +194,8 @@ async def send_time_for_record(cb: types.CallbackQuery):
             InlineKeyboardButton(text=training_time, callback_data=f'finish_{date}_{training_time}_{tr_id}'))
     ikb.add(*buttons)
     await bot.answer_callback_query(callback_query_id=cb.id)
-    await bot.send_message(chat_id=cb.from_user.id, text=text_message, reply_markup=ikb)
+    await bot.edit_message_text(chat_id=cb.from_user.id, text=text_message, message_id=cb.message.message_id,
+                                reply_markup=ikb)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('week_'))
