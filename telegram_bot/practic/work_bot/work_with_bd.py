@@ -1,3 +1,5 @@
+import datetime
+
 import pymongo
 from bson import ObjectId
 
@@ -35,11 +37,10 @@ def send_trainer(query):
 
 def update_record(data_to_save, tr_id):
     my_query = {"_id": ObjectId(tr_id)}
-    my_data = {"$set": {"clients": data_to_save}}
+    my_data = {"$push": {"clients": data_to_save}}
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
     collection.update_one(my_query, my_data)
-
 
 
 def read_record(url):
@@ -55,18 +56,30 @@ def read_record(url):
     print(result)
 
 
-
-
-def delete_record(data):
+def check_user_click(telegram_id):
     """
-        Функция для удаления записей из бд
-    :param data: наши данные                    -> dict
-    :return:
+        Функция проверяет записан ли клиент
+    :param telegram_id: телеграм ID
     """
-    collection = connect_to_mongodb()
-    result = collection.delete_one(data)
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    all_record = collection.find()
+    for record in all_record:
+        if record['telegram_id'] == telegram_id and record['date'] == str(datetime.datetime.now().date()):
+            return True
+    return False
 
-    if result.deleted_count > 0:
-        print('Запись успешно удалено')
-    else:
-        print('Запись не найдена')
+
+def save_user_click(telegram_id, date):
+    """
+        Функция сохраняет клиента если он 1 раз записывается или перезаписывает если дату прошла
+    :param telegram_id: телеграм ID
+    :param date: дата
+    """
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'telegram_id': telegram_id}
+    find = collection.find_one(query)
+    if not find:
+        collection.insert_one({'telegram_id': telegram_id, 'date': date})
+    collection.update_one(filter=query, update={"$set": {'date': date}})
