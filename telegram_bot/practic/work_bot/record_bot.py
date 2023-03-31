@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, types, executor
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from config import TOKEN
 
-from work_with_bd import send_all_trainers, send_trainer, update_record
+from work_with_bd import send_all_trainers, send_trainer, update_record, check_user_click, save_user_click
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -222,30 +222,25 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     record_time = cd.data.split('_')[2]
     tr_id = cd.data.split('_')[3]
 
-    trainers = send_all_trainers()
-    for trainer in trainers:
-        all_records = trainer['clients']
-        for record in all_records:
-            if record['telegram_id'] == telegram_id and record['check_list'] == str(datetime.datetime.now().date()):
-                await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
-            else:
-                list_data = cd.data.split('_')
-                training_time = list_data[2]
-                training_date = list_data[1]
-                text_message = f'Вы записаны {training_date}  на время {training_time}'
-
-                data_to_save = [{
-                    'telegram_id': telegram_id,
-                    'first_name': cd['from']['first_name'],
-                    'username': cd['from']['username'],
-                    'record_date': record_date,
-                    'record_time': record_time,
-                    'check_list': str(datetime.datetime.now().date())
-                }]
-                update_record(data_to_save, tr_id)
-                await bot.answer_callback_query(callback_query_id=cd.id)
-                await bot.send_message(chat_id=cd.from_user.id, text=text_message)
-
+    if check_user_click(telegram_id):
+        await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
+    else:
+        list_data = cd.data.split('_')
+        training_time = list_data[2]
+        training_date = list_data[1]
+        text_message = f'Вы записаны {training_date}  на время {training_time}'
+        await bot.answer_callback_query(callback_query_id=cd.id)
+        await bot.send_message(chat_id=cd.from_user.id, text=text_message)
+        save_user_click(telegram_id, str(datetime.datetime.now().date()))
+        # # data_to_save = {
+        #     'telegram_id': telegram_id,
+        #     'first_name': cd['from']['first_name'],
+        #     'username': cd['from']['username'],
+        #     'record_date': record_date,
+        #     'record_time': record_time,
+        #     'check_list': str(datetime.datetime.now().date())
+        # }
+        # update_record(data_to_save, tr_id)
 
 if __name__ == '__main__':
     executor.start_polling(dp, on_startup=on_startup, skip_updates=True)
