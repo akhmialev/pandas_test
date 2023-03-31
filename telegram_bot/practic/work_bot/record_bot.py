@@ -1,12 +1,11 @@
 import datetime
 import locale
-from bson import ObjectId
 
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from config import TOKEN
 
-from work_with_bd import send_all_trainers, send_trainer, update_record, check_user_click, save_user_click
+from work_with_bd import send_all_trainers, check_user_click, save_user_click
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -49,7 +48,8 @@ def create_calendar(trainer, tr_id):
                 comparison = today.strftime('%d.%m')
                 if comparison not in holiday_days:
                     row.append(InlineKeyboardButton(text=f'{button_text}',
-                                                    callback_data=f'record_{today.strftime("%d.%m.%y")}_{trainer}_{tr_id}'))
+                                                    callback_data=f'record_{today.strftime("%d.%m.%y")}'
+                                                                  f'_{trainer}_{tr_id}'))
                 else:
                     row.append(InlineKeyboardButton(text='🚫', callback_data=f'week_{week_button_text}_{trainer}'))
                 today += datetime.timedelta(days=1)
@@ -220,7 +220,6 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     telegram_id = str(cd.from_user.id)
     record_date = cd.data.split('_')[1]
     record_time = cd.data.split('_')[2]
-    tr_id = cd.data.split('_')[3]
 
     if check_user_click(telegram_id):
         await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
@@ -231,16 +230,16 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
         text_message = f'Вы записаны {training_date}  на время {training_time}'
         await bot.answer_callback_query(callback_query_id=cd.id)
         await bot.send_message(chat_id=cd.from_user.id, text=text_message)
-        save_user_click(telegram_id, str(datetime.datetime.now().date()))
-        # # data_to_save = {
-        #     'telegram_id': telegram_id,
-        #     'first_name': cd['from']['first_name'],
-        #     'username': cd['from']['username'],
-        #     'record_date': record_date,
-        #     'record_time': record_time,
-        #     'check_list': str(datetime.datetime.now().date())
-        # }
-        # update_record(data_to_save, tr_id)
+
+        data_to_save = {
+            'telegram_id': telegram_id,
+            'first_name': cd['from']['first_name'],
+            'username': cd['from']['username'],
+            'record_date': record_date,
+            'record_time': record_time,
+            'date': str(datetime.datetime.now().date())
+        }
+        save_user_click(data_to_save)
 
 if __name__ == '__main__':
     executor.start_polling(dp, on_startup=on_startup, skip_updates=True)
