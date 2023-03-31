@@ -1,69 +1,72 @@
 import pymongo
+from bson import ObjectId
+
+from config import URL_FOR_CONNECT_TO_DB
 
 
-
-def connect_to_mongodb(host, port):
+def connect_to_mongodb():
     """
-        функиця подключения к базе данных
-    :param host: адресс подключения
-    :param port: порт подключения
-    :return:
+    Функция подключения к базе данных
     """
-    client = pymongo.MongoClient(host, port)
-    db = client['mydatabase']
-    collection = db['mycollection']
-    return collection
+    client = pymongo.MongoClient(URL_FOR_CONNECT_TO_DB)
+    db = client['record_bot']
+    return db
 
 
-def create_record(data, host, port):
+def send_all_trainers():
     """
-        Функиця для записи данных в бд mongoDB использовал insert_one для олной записи, если много записей можно исп.
-        insert_many
-    :param data:наши данные которые нужно записать          -> dict
-    :return:
+    Функция подключения к бд и возврата коллекции со всеми тренерами.
     """
-    if type(data) == dict(data):
-        collection = connect_to_mongodb(host, port)
-        collection.insert_one(data)
-        print("Данные успешно записаны")
-    else:
-        pass
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    trainers = collection.find()
+    return trainers
 
 
-def read_record(data, host, port):
+def send_trainer(query):
     """
-        функиця для поиска в бд
-    :param data: наши данные
-    :return:
+    Функция для поиска нужного тренера.
     """
-    collection = connect_to_mongodb(host, port)
-    result = collection.find_one(data)
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    trainer = collection.find_one(query)
+    return trainer
+
+
+def update_record(data_to_save, tr_id):
+    my_query = {"_id": ObjectId(tr_id)}
+    my_data = {"$set": {"clients": data_to_save}}
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    collection.update_one(my_query, my_data)
+
+
+
+def read_record(url):
+    """
+        Функция для поиска в бд
+    """
+    client = pymongo.MongoClient(url)
+    db = client['record_bot']
+    collections = db.get_collection('trainers')
+    res = {'id': 1}
+    result = collections.find_one(res)
+
     print(result)
 
 
-def update_record(data, new_data, host, port):
-    """
-        функция для редактирования записи в бд
-    :param data: старые данные
-    :param new_data: новыне данные              -> dict
-    :return:
-    """
-    collection = connect_to_mongodb(host, port)
-    new_data = {"$set": {new_data}}
-    collection.update_one(data, new_data)
-    print(f'Данные {data["name"]}')
 
 
-def delete_record(data, host, port):
+def delete_record(data):
     """
-        функиця для удаления записей из бд
+        Функция для удаления записей из бд
     :param data: наши данные                    -> dict
     :return:
     """
-    collection = connect_to_mongodb(host, port)
+    collection = connect_to_mongodb()
     result = collection.delete_one(data)
 
     if result.deleted_count > 0:
         print('Запись успешно удалено')
     else:
-        print("Запись не найдена")
+        print('Запись не найдена')

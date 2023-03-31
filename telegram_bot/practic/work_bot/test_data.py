@@ -1,26 +1,59 @@
-TOKEN = '6077546352:AAGQs7pcHn29f9A94ivIhqST_pfw81wXx1Q'
+import datetime
 
 trainers = [
     {
-        'id': 1,
-        'name': 'Ivan',
-        'lname': 'Inamovich',
+        'name': 'Андрей',
+        'lname': 'Андреевич',
         'time': [],
-        'week_day': ['02.04', '05.04', '24.04', '20.04']
+        'week_day': ['02.04', '05.04', '24.04', '20.04'],
+        'clients': [
+            {
+                'telegram_id': "",
+                'first_name': '',
+                'username': '',
+                'record_date': '',
+                'record_time': '',
+                'check_click': {
+                    '':''
+                }
+            },
+        ]
     },
     {
-        'id': 2,
-        'name': 'Petia',
-        'lname': 'Petrov',
+        'name': 'Петр',
+        'lname': 'Петровчи',
         'time': [],
-        'week_day': ['05.04', '10.04']
+        'week_day': ['05.04', '06.04', '4.04', '25.04'],
+        'clients': [
+            {
+                'telegram_id': "",
+                'first_name': '',
+                'username': '',
+                'record_date': '',
+                'record_time': '',
+                'check_click': {
+                    "":""
+                }
+            },
+        ]
     },
     {
-        'id': 3,
-        'name': 'Misha',
-        'lname': 'Mihailovich',
+        'name': 'dmitriy',
+        'lname': 'D',
         'time': [],
-        'week_day': ['30.03', '26.04']
-    }
+        'week_day': ['010.04', '12.04', '21.04', '29.04'],
+        'clients': [
+            {
+                'telegram_id': "",
+                'first_name': '',
+                'username': '',
+                'record_date': '',
+                'record_time': '',
+                'check_click': ''
 
+            },
+        ]
+    },
 ]
+for t in trainers:
+    print(t['clients'])

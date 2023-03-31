@@ -1,14 +1,16 @@
 import datetime
 import locale
+from bson import ObjectId
 
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from config import TOKEN
 
-from work_with_bd import send_all_trainers
+from work_with_bd import send_all_trainers, send_trainer, update_record
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
+
 user_activiti_day = {}
 
 
@@ -47,7 +49,7 @@ def create_calendar(trainer, tr_id):
                 comparison = today.strftime('%d.%m')
                 if comparison not in holiday_days:
                     row.append(InlineKeyboardButton(text=f'{button_text}',
-                                                    callback_data=f'record_{today.strftime("%d.%m.%y")}_{trainer}'))
+                                                    callback_data=f'record_{today.strftime("%d.%m.%y")}_{trainer}_{tr_id}'))
                 else:
                     row.append(InlineKeyboardButton(text='🚫', callback_data=f'week_{week_button_text}_{trainer}'))
                 today += datetime.timedelta(days=1)
@@ -111,7 +113,7 @@ async def send_choice_all_trainers(msg: types.Message):
     Функция вывода выбора тренеров
     """
     if 'записаться' in msg.text.lower():
-        # здесь должно быть подключение к бд и вывод всех тренеров(я пока использовал просто список trainers с dict)
+        # Нее разобрался почему не работает с русским в 125 строчке callback_data
         trainers_button = []
         trainers = send_all_trainers()
 
@@ -178,6 +180,7 @@ async def send_time_for_record(cb: types.CallbackQuery):
     list_data = cb.data.split('_')
     date = list_data[1]
     trainer = list_data[2]
+    tr_id = list_data[3]
 
     text_message = f'Выберите время для записи к {trainer} на {date}:'
     ikb = InlineKeyboardMarkup()
@@ -187,7 +190,7 @@ async def send_time_for_record(cb: types.CallbackQuery):
         end_time = f'{hour + 1:02d}:00'
         training_time = f'{start_time} - {end_time}'
         buttons.append(
-            InlineKeyboardButton(text=training_time, callback_data=f'finish record_{date}_{training_time}_{trainer}'))
+            InlineKeyboardButton(text=training_time, callback_data=f'finish_{date}_{training_time}_{tr_id}'))
     ikb.add(*buttons)
     await bot.answer_callback_query(callback_query_id=cb.id)
     await bot.send_message(chat_id=cb.from_user.id, text=text_message, reply_markup=ikb)
@@ -207,28 +210,39 @@ async def send_record_time_week_day(cb: types.CallbackQuery):
         await bot.answer_callback_query(callback_query_id=cb.id, text=f'У {trainer} {week_day} не рабочий день')
 
 
-@dp.callback_query_handler(lambda c: c.data.startswith('finish '))
+@dp.callback_query_handler(lambda c: c.data.startswith('finish_'))
 async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     """
     Функция делает запись на определенное время и делает проверку, записаться можно только раз в день
     """
-    user_id = cd.from_user.id
+    telegram_id = str(cd.from_user.id)
+    record_date = cd.data.split('_')[1]
+    record_time = cd.data.split('_')[2]
+    tr_id = cd.data.split('_')[3]
 
-    if user_id in user_activiti_day and user_activiti_day[user_id] == datetime.datetime.now().date():
-        await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
-    else:
-        list_data = cd.data.split('_')
-        trainer = list_data[3]
-        training_time = list_data[2]
-        training_date = list_data[1]
-        text_message = f'Вы записаны {training_date} к тренеру {trainer} на время {training_time}'
+    trainers = send_all_trainers()
+    for trainer in trainers:
+        all_records = trainer['clients']
+        for record in all_records:
+            if record['telegram_id'] == telegram_id and record['check_list'] == str(datetime.datetime.now().date()):
+                await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
+            else:
+                list_data = cd.data.split('_')
+                training_time = list_data[2]
+                training_date = list_data[1]
+                text_message = f'Вы записаны {training_date}  на время {training_time}'
 
-        await bot.answer_callback_query(callback_query_id=cd.id)
-        await bot.send_message(chat_id=cd.from_user.id, text=text_message)
-        user_activiti_day[user_id] = datetime.datetime.now().date()
-        print(user_activiti_day)
-        data = trainer, training_time, training_date
-        create_dct_for_db(data)
+                data_to_save = [{
+                    'telegram_id': telegram_id,
+                    'first_name': cd['from']['first_name'],
+                    'username': cd['from']['username'],
+                    'record_date': record_date,
+                    'record_time': record_time,
+                    'check_list': str(datetime.datetime.now().date())
+                }]
+                update_record(data_to_save, tr_id)
+                await bot.answer_callback_query(callback_query_id=cd.id)
+                await bot.send_message(chat_id=cd.from_user.id, text=text_message)
 
 
 if __name__ == '__main__':
