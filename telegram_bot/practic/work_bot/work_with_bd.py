@@ -62,7 +62,7 @@ def check_user_click(telegram_id):
     :param telegram_id: телеграм ID
     """
     db = connect_to_mongodb()
-    collection = db.get_collection('users')
+    collection = db.get_collection('users_record')
     all_record = collection.find()
     for record in all_record:
         if record['telegram_id'] == telegram_id and record['date'] == str(datetime.datetime.now().date()):
@@ -70,16 +70,31 @@ def check_user_click(telegram_id):
     return False
 
 
-def save_user_click(telegram_id, date):
+def save_user_click(date_to_save):
     """
         Функция сохраняет клиента если он 1 раз записывается или перезаписывает если дату прошла
     :param telegram_id: телеграм ID
     :param date: дата
     """
+    telegram_id = date_to_save['telegram_id']
+    date = date_to_save['date']
+    first_name = date_to_save['first_name']
+    username = date_to_save['username']
+    record_date = date_to_save['record_date']
+    record_time = date_to_save['record_time']
+
     db = connect_to_mongodb()
-    collection = db.get_collection('users')
+    collection = db.get_collection('users_record')
     query = {'telegram_id': telegram_id}
     find = collection.find_one(query)
     if not find:
-        collection.insert_one({'telegram_id': telegram_id, 'date': date})
-    collection.update_one(filter=query, update={"$set": {'date': date}})
+        collection.insert_one({'telegram_id': telegram_id})
+    collection.update_one(filter=query, update={
+        "$set": {
+            'date': date,
+            'first_name': first_name,
+            'username': username,
+            'record_date': record_date,
+            'record_time': record_time
+        }
+    })
