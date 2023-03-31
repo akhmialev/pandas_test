@@ -73,8 +73,6 @@ def check_user_click(telegram_id):
 def save_user_click(date_to_save):
     """
         Функция сохраняет клиента если он 1 раз записывается или перезаписывает если дату прошла
-    :param telegram_id: телеграм ID
-    :param date: дата
     """
     telegram_id = date_to_save['telegram_id']
     date = date_to_save['date']
