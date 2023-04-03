@@ -2,7 +2,7 @@ import datetime
 import locale
 
 from aiogram import Bot, Dispatcher, types, executor
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, Update
 from config import TOKEN
 
 from work_with_bd import send_all_trainers, check_user_click, save_user_click
@@ -11,6 +11,7 @@ bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
 user_activiti_day = {}
+stack = []
 
 
 async def on_startup(_):
@@ -56,7 +57,8 @@ def create_calendar(trainer, tr_id):
             else:
                 row.append(InlineKeyboardButton(text=' ', callback_data='ignore'))
     ikb.add(*row)
-
+    ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
+    stack.append(ikb)
     return ikb
 
 
@@ -126,6 +128,8 @@ async def send_choice_all_trainers(msg: types.Message):
             trainers_button.append(button)
         ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
         ikb.add(*trainers_button)
+        stack.append(ikb)
+        print(stack)
         await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренера', reply_markup=ikb)
     else:
         """
@@ -192,7 +196,9 @@ async def send_time_for_record(cb: types.CallbackQuery):
         training_time = f'{start_time} - {end_time}'
         buttons.append(
             InlineKeyboardButton(text=training_time, callback_data=f'finish_{date}_{training_time}_{tr_id}'))
+    ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
     ikb.add(*buttons)
+    stack.append(ikb)
     await bot.answer_callback_query(callback_query_id=cb.id)
     await bot.edit_message_text(chat_id=cb.from_user.id, text=text_message, message_id=cb.message.message_id,
                                 reply_markup=ikb)
@@ -240,6 +246,19 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
             'date': str(datetime.datetime.now().date())
         }
         save_user_click(data_to_save)
+
+
+@dp.callback_query_handler(lambda c: c.data.startswith('back'))
+async def go_back(cb: types.CallbackQuery):
+    """
+        Функция кнопки назад
+    """
+    if len(stack) > 0:
+        stack.pop()
+        kb = stack[-1]
+        await bot.edit_message_text(chat_id=cb.from_user.id, reply_markup=kb, message_id=cb.message.message_id,
+                                    text='Вы вернулись в назад')
+
 
 if __name__ == '__main__':
     executor.start_polling(dp, on_startup=on_startup, skip_updates=True)
