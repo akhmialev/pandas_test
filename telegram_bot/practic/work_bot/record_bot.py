@@ -1,11 +1,10 @@
-import datetime
 import locale
 
 from aiogram import Bot, Dispatcher, types, executor
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, Update
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from config import TOKEN
 
-from work_with_bd import send_all_trainers, check_user_click, save_user_click
+from work_with_bd import *
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -22,6 +21,36 @@ def record_to_db(dct):
     print(dct)
 
 
+def create_calendar_if_not_work_schedule(week_days, today, ikb, trainer, tr_id, buttons, holiday_days):
+    for day in week_days:
+        buttons.append(InlineKeyboardButton(text=day, callback_data=f'day_week_{day}'))
+    ikb.row(*buttons)
+
+    row = []
+    for week in range(4):
+        for day in week_days:
+            button_text = today.strftime('%d')
+            week_button_text = today.strftime('%d.%m')
+            if today.strftime('%a') == str(day):
+                comparison = today.strftime('%d.%m')
+                if comparison not in holiday_days:
+                    row.append(InlineKeyboardButton(text=f'{button_text}',
+                                                    callback_data=f'record_{today.strftime("%d.%m.%y")}_{tr_id}'))
+                else:
+                    row.append(InlineKeyboardButton(text='🚫', callback_data=f'week_{week_button_text}_{trainer}'))
+                today += datetime.timedelta(days=1)
+            else:
+                row.append(InlineKeyboardButton(text=' ', callback_data='ignore'))
+    ikb.add(*row)
+    ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
+    stack.append(ikb)
+    return ikb
+
+
+def create_calendar_work_schedule():
+    pass
+
+
 def create_calendar(trainer, tr_id):
     """
     Функция создает календарь с текущим днем плюс 4 недели, так же учитывает выходные дни тренера,
@@ -36,30 +65,11 @@ def create_calendar(trainer, tr_id):
     buttons = []
     today = datetime.datetime.today()
 
-    for day in week_days:
-        buttons.append(InlineKeyboardButton(text=day, callback_data=f'day_week_{day}'))
-    ikb.row(*buttons)
-
-    row = []
-    for week in range(4):
-        for day in week_days:
-            button_text = today.strftime('%d')
-            week_button_text = today.strftime('%d.%m')
-            if today.strftime('%a') == str(day):
-                comparison = today.strftime('%d.%m')
-                if comparison not in holiday_days:
-                    row.append(InlineKeyboardButton(text=f'{button_text}',
-                                                    callback_data=f'record_{today.strftime("%d.%m.%y")}'
-                                                                  f'_{trainer}_{tr_id}'))
-                else:
-                    row.append(InlineKeyboardButton(text='🚫', callback_data=f'week_{week_button_text}_{trainer}'))
-                today += datetime.timedelta(days=1)
-            else:
-                row.append(InlineKeyboardButton(text=' ', callback_data='ignore'))
-    ikb.add(*row)
-    ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
-    stack.append(ikb)
-    return ikb
+    check_work_schedule = take_working_schedule(tr_id)
+    if check_work_schedule <= 27:
+        return create_calendar_if_not_work_schedule(week_days, today, ikb, trainer, tr_id, buttons, holiday_days)
+    else:
+        pass
 
 
 def create_dct_for_db(date):
@@ -94,7 +104,7 @@ def get_holiday_date(tr_id):
     for trainer in trainers:
         trainer_id = trainer['_id']
         if str(trainer_id) == tr_id:
-            return trainer['week_day']
+            return trainer['working_schedule']['weekend_days']
 
 
 @dp.message_handler(commands='start')
@@ -102,6 +112,10 @@ async def menu(msg: types.Message):
     """
     Функция создает стартовое меню
     """
+    user_id = msg.from_user.id
+    username = msg.from_user.username
+    first_name = msg.from_user.first_name
+    create_user_in_db(user_id, username, first_name)
     kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     b1 = KeyboardButton(text='Удалить_запись')
     b2 = KeyboardButton(text='Записаться')
@@ -121,9 +135,9 @@ async def send_choice_all_trainers(msg: types.Message):
 
         for element in trainers:
             name = element['name']
-            lname = element['lname']
+            last_name = element['last_name']
             tr_id = element['_id']
-            fullname = name + ' ' + lname
+            fullname = name + ' ' + last_name
             button = InlineKeyboardButton(text=fullname, callback_data=f'trainer_{fullname}_{tr_id}')
             trainers_button.append(button)
         ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
@@ -184,10 +198,10 @@ async def send_time_for_record(cb: types.CallbackQuery):
     # у меня тут график с 7 до 24 часов.
     list_data = cb.data.split('_')
     date = list_data[1]
-    trainer = list_data[2]
-    tr_id = list_data[3]
+    tr_id = list_data[2]
+    name, last_name = take_trainer_name(tr_id)
 
-    text_message = f'Выберите время для записи к {trainer} на {date}:'
+    text_message = f'Выберите время для записи к {name} {last_name} на {date}:'
     ikb = InlineKeyboardMarkup()
     buttons = []
     for hour in range(7, 24):
@@ -196,8 +210,8 @@ async def send_time_for_record(cb: types.CallbackQuery):
         training_time = f'{start_time} - {end_time}'
         buttons.append(
             InlineKeyboardButton(text=training_time, callback_data=f'finish_{date}_{training_time}_{tr_id}'))
-    ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
     ikb.add(*buttons)
+    ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
     stack.append(ikb)
     await bot.answer_callback_query(callback_query_id=cb.id)
     await bot.edit_message_text(chat_id=cb.from_user.id, text=text_message, message_id=cb.message.message_id,
@@ -256,6 +270,7 @@ async def go_back(cb: types.CallbackQuery):
     if len(stack) > 0:
         stack.pop()
         kb = stack[-1]
+        await bot.answer_callback_query(callback_query_id=cb.id)
         await bot.edit_message_text(chat_id=cb.from_user.id, reply_markup=kb, message_id=cb.message.message_id,
                                     text='Вы вернулись в назад')
 
