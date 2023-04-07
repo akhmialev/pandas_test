@@ -13,6 +13,7 @@ def connect_to_mongodb():
     db = client['record_bot']
     return db
 
+
 def create_user_in_db(user_id, username, first_name):
     """
         Функция для добавления в бд нового пользователя
@@ -51,7 +52,7 @@ def send_all_trainers():
     return trainers
 
 
-def send_trainer(query):
+def send_trainer_for_query(query):
     """
     Функция для поиска нужного тренера.
     """
@@ -123,6 +124,7 @@ def save_user_click(date_to_save):
         }
     })
 
+
 def take_trainer_name(tr_id):
     """
         Функция для поиска ФИО тренера
@@ -141,7 +143,6 @@ def take_working_schedule(tr_id):
     id_tr = ObjectId(tr_id)
     trainer = collection.find_one({'_id': id_tr})
     return len(trainer['working_schedule']['work_days'])
-
 
 # def add_el():
 #     db = connect_to_mongodb()
