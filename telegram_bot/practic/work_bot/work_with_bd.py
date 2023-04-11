@@ -56,6 +56,17 @@ def get_work_time(tr_id, date):
             return tr['time']
 
 
+def check_time(tr_id, date):
+    tr_id = ObjectId(tr_id)
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    query = {'_id': tr_id}
+    records = collection.find_one(query)
+    for record in records['records']:
+        if record['date'] == str(date):
+            time = record['time'][:5]
+            return time
+
 def send_all_trainers():
     """
     Функция подключения к бд и возврата коллекции со всеми тренерами.
