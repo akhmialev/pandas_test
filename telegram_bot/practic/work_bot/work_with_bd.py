@@ -36,14 +36,10 @@ def create_user_in_db(user_id, username, first_name):
             "status_gym": "",
         }]
     }
-    query = {'id_telegram': user_id}
+    query = {'id_telegram': str(user_id)}
     users = collection.find_one(query)
     if users is None:
         collection.insert_one(data)
-    else:
-        pass
-    #надо дописать проверку если юзера с id нету то создаем ( тут в целом у меня хз что происходит)!!!
-
 
 def get_work_time(tr_id, date):
     """
