@@ -41,6 +41,7 @@ def create_user_in_db(user_id, username, first_name):
     if users is None:
         collection.insert_one(data)
 
+
 def get_work_time(tr_id, date):
     """
         Функция берет время работы тренера на определенную дату
@@ -57,6 +58,11 @@ def get_work_time(tr_id, date):
 
 
 def check_time(tr_id, date):
+    """
+        Функция для проверки времени
+    :param tr_id: id тренера
+    :param date: дата которую выбрал пользователь
+    """
     tr_id = ObjectId(tr_id)
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
@@ -66,6 +72,7 @@ def check_time(tr_id, date):
         if record['date'] == str(date):
             time = record['time'][:5]
             return time
+
 
 def send_all_trainers():
     """
@@ -99,8 +106,6 @@ def save_record_to_trainer(telegram_id, record_date, record_time, tr_id):
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
     collection.update_one(my_query, my_data)
-
-
 
 
 def read_record(url):
