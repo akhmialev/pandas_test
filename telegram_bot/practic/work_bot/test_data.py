@@ -29,7 +29,7 @@ trainers = [
         },
         "photo_url": ""
     },
-   {
+    {
         "name": "Иван",
         "last_name": "Иванович",
         "id_telegram": "",

@@ -17,11 +17,10 @@ async def on_startup(_):
     print('Бот включен')
 
 
-def record_to_db(dct):
-    print(dct)
+def create_calendar_if_not_work_schedule(week_days, today, trainer, tr_id, holiday_days):
+    buttons = []
+    ikb = InlineKeyboardMarkup(row_width=7)
 
-
-def create_calendar_if_not_work_schedule(week_days, today, ikb, trainer, tr_id, buttons, holiday_days):
     for day in week_days:
         buttons.append(InlineKeyboardButton(text=day, callback_data=f'day_week_{day}'))
     ikb.row(*buttons)
@@ -47,8 +46,26 @@ def create_calendar_if_not_work_schedule(week_days, today, ikb, trainer, tr_id, 
     return ikb
 
 
-def create_calendar_work_schedule():
-    pass
+def create_calendar_work_schedule(tr_id, week_days, today):
+    query = {'_id': ObjectId(tr_id)}
+    trainer = send_trainer_for_query(query)
+    data_lst = []
+    for tr_data in trainer['working_schedule']['work_days']:
+        data_lst.append(tr_data['date'])
+    ikb = InlineKeyboardMarkup()
+
+    # data_lst = ['05.04', '06.04', '07.04', '08.04', '09.04']
+    # buttons = []
+    # for _day in week_days:
+    #     buttons.append(InlineKeyboardButton(text=_day, callback_data=f'day_week_{_day}'))
+    # ikb.row(*buttons)
+    buttons = []
+    for day in data_lst:
+        buttons.append(InlineKeyboardButton(text=day, callback_data=f'record_{day}_{tr_id}'))
+    ikb.add(*buttons)
+    ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
+    stack.append(ikb)
+    return ikb
 
 
 def create_calendar(trainer, tr_id):
@@ -60,16 +77,14 @@ def create_calendar(trainer, tr_id):
     """
     locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
     holiday_days = get_holiday_date(tr_id)
-    ikb = InlineKeyboardMarkup(row_width=7)
     week_days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
-    buttons = []
     today = datetime.datetime.today()
 
     check_work_schedule = take_working_schedule(tr_id)
-    if check_work_schedule <= 27:
-        return create_calendar_if_not_work_schedule(week_days, today, ikb, trainer, tr_id, buttons, holiday_days)
-    else:
-        pass
+    # if check_work_schedule <= 27:
+    #     return create_calendar_if_not_work_schedule(week_days, today, trainer, tr_id, holiday_days)
+    # else:
+    return create_calendar_work_schedule(tr_id, week_days, today)
 
 
 def create_dct_for_db(date):
@@ -90,7 +105,6 @@ def create_dct_for_db(date):
         'training_date': training_date
 
     }
-    record_to_db(dct)
 
 
 def get_holiday_date(tr_id):
@@ -143,7 +157,7 @@ async def send_choice_all_trainers(msg: types.Message):
         ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
         ikb.add(*trainers_button)
         stack.append(ikb)
-        print(stack)
+        # print(stack)
         await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренера', reply_markup=ikb)
     else:
         """
@@ -200,11 +214,14 @@ async def send_time_for_record(cb: types.CallbackQuery):
     date = list_data[1]
     tr_id = list_data[2]
     name, last_name = take_trainer_name(tr_id)
+    trainer = get_work_time(tr_id, date)
+    start_time = int(trainer.split('-')[0])
+    end_time = int(trainer.split('-')[1])
 
     text_message = f'Выберите время для записи к {name} {last_name} на {date}:'
     ikb = InlineKeyboardMarkup()
     buttons = []
-    for hour in range(7, 24):
+    for hour in range(start_time, end_time):
         start_time = f'{hour:02d}:00'
         end_time = f'{hour + 1:02d}:00'
         training_time = f'{start_time} - {end_time}'
@@ -240,6 +257,7 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     telegram_id = str(cd.from_user.id)
     record_date = cd.data.split('_')[1]
     record_time = cd.data.split('_')[2]
+    tr_id = str(cd.data.split('_')[3])
 
     if check_user_click(telegram_id):
         await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
@@ -259,6 +277,7 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
             'record_time': record_time,
             'date': str(datetime.datetime.now().date())
         }
+        save_record_to_trainer(telegram_id, record_date, record_time, tr_id)
         save_user_click(data_to_save)
 
 

@@ -26,7 +26,7 @@ def create_user_in_db(user_id, username, first_name):
     data = {
         "username": username,
         "first_name": first_name,
-        "id_telegram": user_id,
+        "id_telegram": str(user_id),
         "trainers": [{
             "id_trainers": "",
             "status": "",
@@ -36,10 +36,28 @@ def create_user_in_db(user_id, username, first_name):
             "status_gym": "",
         }]
     }
-    users = collection.find()
-    for user in users:
-        if user['id_telegram'] != user_id:
-            collection.insert_one(data)
+    query = {'id_telegram': user_id}
+    users = collection.find_one(query)
+    if users is None:
+        collection.insert_one(data)
+    else:
+        pass
+    #надо дописать проверку если юзера с id нету то создаем ( тут в целом у меня хз что происходит)!!!
+
+
+def get_work_time(tr_id, date):
+    """
+        Функция берет время работы тренера на определенную дату
+    :param tr_id: id тренера
+    :param date: рабочая дата тренера
+    """
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    query = {'_id': ObjectId(tr_id)}
+    trainer = collection.find_one(query)
+    for tr in trainer['working_schedule']['work_days']:
+        if date == (tr['date']):
+            return tr['time']
 
 
 def send_all_trainers():
@@ -62,12 +80,20 @@ def send_trainer_for_query(query):
     return trainer
 
 
-def update_record(data_to_save, tr_id):
+def save_record_to_trainer(telegram_id, record_date, record_time, tr_id):
+    data = {
+        'id_user': telegram_id,
+        'date': record_date,
+        'time': record_time,
+        'status': ''
+    }
     my_query = {"_id": ObjectId(tr_id)}
-    my_data = {"$push": {"clients": data_to_save}}
+    my_data = {"$push": {"records": data}}
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
     collection.update_one(my_query, my_data)
+
+
 
 
 def read_record(url):
@@ -143,151 +169,3 @@ def take_working_schedule(tr_id):
     id_tr = ObjectId(tr_id)
     trainer = collection.find_one({'_id': id_tr})
     return len(trainer['working_schedule']['work_days'])
-
-# def add_el():
-#     db = connect_to_mongodb()
-#     collection = db.get_collection('trainers')
-#     data = {
-#         "name": "Иван",
-#         "last_name": "Иванович",
-#         "id_telegram": "",
-#         "records": [{
-#             "id_user": "",
-#             "date": "",
-#             "time": "",
-#             "status": ""
-#         }],
-#         "working_schedule": {
-#             "weekend_days": [],
-#             "work_days": [
-#                 {
-#                     "date": "06.04",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "07.04",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "08.04",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "09.04",
-#                     "time": "11-15"
-#                 },
-#                 {
-#                     "date": "10.04",
-#                     "time": "12-15"
-#                 },
-#                 {
-#                     "date": "11.04",
-#                     "time": "13-15"
-#                 },
-#                 {
-#                     "date": "12.04",
-#                     "time": "5-15"
-#                 },
-#                 {
-#                     "date": "13.04",
-#                     "time": "6-15"
-#                 },
-#                 {
-#                     "date": "14.04",
-#                     "time": "7-15"
-#                 },
-#                 {
-#                     "date": "15.04",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "16.04",
-#                     "time": "9-15"
-#                 },
-#                 {
-#                     "date": "17.04",
-#                     "time": "10-14"
-#                 },
-#                 {
-#                     "date": "18.04",
-#                     "time": "10-16"
-#                 },
-#                 {
-#                     "date": "19.04",
-#                     "time": "10-17"
-#                 },
-#                 {
-#                     "date": "20.04",
-#                     "time": "10-18"
-#                 },
-#                 {
-#                     "date": "21.04",
-#                     "time": "10-19"
-#                 },
-#                 {
-#                     "date": "22.04",
-#                     "time": "7-20"
-#                 },
-#                 {
-#                     "date": "23.04",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "24.04",
-#                     "time": "8-21"
-#                 },
-#                 {
-#                     "date": "25.04",
-#                     "time": "9-22"
-#                 },
-#                 {
-#                     "date": "26.04",
-#                     "time": "10-23"
-#                 },
-#                 {
-#                     "date": "28.04",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "29.04",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "30.04",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "01.05",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "02.05",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "03.05",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "04.05",
-#                     "time": "10-15"
-#                 },
-#                 {
-#                     "date": "05.05",
-#                     "time": "10-15"
-#                 },
-#             ]
-#         },
-#         "rating": {
-#             "id_user": "",
-#             "rating": ""
-#         },
-#         "grade": {
-#             "title": "",
-#             "description": "",
-#             "date": "",
-#         },
-#         "photo_url": ""
-#     }
-#     collection.insert_one(data)
-# add_el()
