@@ -208,8 +208,6 @@ async def send_time_for_record(cb: types.CallbackQuery):
     """
     Функция выводит меню времени для записи
     """
-    # тут было бы неплохо сделать еще проверку на время работы тренера(он может работать не по дефолтному графику)
-    # у меня тут график с 7 до 24 часов.
     list_data = cb.data.split('_')
     date = list_data[1]
     tr_id = list_data[2]
@@ -217,16 +215,16 @@ async def send_time_for_record(cb: types.CallbackQuery):
     trainer = get_work_time(tr_id, date)
     start_time = int(trainer.split('-')[0])
     end_time = int(trainer.split('-')[1])
-
     text_message = f'Выберите время для записи к {name} {last_name} на {date}:'
     ikb = InlineKeyboardMarkup()
     buttons = []
     for hour in range(start_time, end_time):
         start_time = f'{hour:02d}:00'
         end_time = f'{hour + 1:02d}:00'
-        training_time = f'{start_time} - {end_time}'
-        buttons.append(
-            InlineKeyboardButton(text=training_time, callback_data=f'finish_{date}_{training_time}_{tr_id}'))
+        if start_time != check_time(tr_id, date):
+            training_time = f'{start_time} - {end_time}'
+            buttons.append(
+                InlineKeyboardButton(text=training_time, callback_data=f'finish_{date}_{training_time}_{tr_id}'))
     ikb.add(*buttons)
     ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
     stack.append(ikb)
