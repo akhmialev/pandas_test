@@ -277,6 +277,7 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
         }
         save_record_to_trainer(telegram_id, record_date, record_time, tr_id)
         save_user_click(data_to_save, tr_id)
+        update_user_save(telegram_id, tr_id)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('back'))

@@ -42,6 +42,18 @@ def create_user_in_db(user_id, username, first_name):
         collection.insert_one(data)
 
 
+def update_user_save(telegram_id, tr_id):
+    data = {'id_trainers': tr_id,
+            'status': ''}
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    my_data = {'$addToSet': {'trainers': data}}
+    collection.update_one(query, my_data)
+
+
+
+
 def get_work_time(tr_id, date):
     """
         Функция берет время работы тренера на определенную дату
