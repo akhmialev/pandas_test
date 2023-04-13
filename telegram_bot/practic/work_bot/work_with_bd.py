@@ -121,7 +121,7 @@ def read_record(url):
     print(result)
 
 
-def check_user_click(telegram_id):
+def check_user_click(telegram_id, tr_id):
     """
         Функция проверяет записан ли клиент
     :param telegram_id: телеграм ID
@@ -130,12 +130,14 @@ def check_user_click(telegram_id):
     collection = db.get_collection('users_check_click')
     all_record = collection.find()
     for record in all_record:
-        if record['telegram_id'] == telegram_id and record['date'] == str(datetime.datetime.now().date()):
-            return True
+        for trainer_id in record['trainers_id']:
+            if str(trainer_id) == str(tr_id):
+                if record['telegram_id'] == telegram_id and record['date'] == str(datetime.datetime.now().date()):
+                    return True
     return False
 
 
-def save_user_click(date_to_save):
+def save_user_click(date_to_save, tr_id):
     """
         Функция сохраняет клиента если он 1 раз записывается или перезаписывает если дату прошла
     """
@@ -158,9 +160,13 @@ def save_user_click(date_to_save):
             'first_name': first_name,
             'username': username,
             'record_date': record_date,
-            'record_time': record_time
+            'record_time': record_time,
+        },
+        '$addToSet': {
+            'trainers_id': tr_id
         }
-    })
+
+    }, upsert=True)
 
 
 def take_trainer_name(tr_id):

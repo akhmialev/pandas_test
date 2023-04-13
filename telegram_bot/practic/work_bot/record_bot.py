@@ -257,7 +257,7 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     record_time = cd.data.split('_')[2]
     tr_id = str(cd.data.split('_')[3])
 
-    if check_user_click(telegram_id):
+    if check_user_click(telegram_id, tr_id):
         await bot.send_message(chat_id=cd.from_user.id, text='Вы уже записаны')
     else:
         list_data = cd.data.split('_')
@@ -276,7 +276,7 @@ async def finish_record_and_add_to_db(cd: types.CallbackQuery):
             'date': str(datetime.datetime.now().date())
         }
         save_record_to_trainer(telegram_id, record_date, record_time, tr_id)
-        save_user_click(data_to_save)
+        save_user_click(data_to_save, tr_id)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('back'))
