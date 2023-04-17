@@ -199,3 +199,31 @@ def take_working_schedule(tr_id):
     id_tr = ObjectId(tr_id)
     trainer = collection.find_one({'_id': id_tr})
     return len(trainer['working_schedule']['work_days'])
+
+
+def get_gyms():
+    db = connect_to_mongodb()
+    collection = db.get_collection('gyms')
+    gyms = collection.find()
+    return gyms
+
+def check_user_in_menu(user_id):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(user_id)}
+    user = collection.find_one(query)
+    for u in user['gym']:
+        if u['id_gym'] == None:
+            return False
+        return True
+
+def save_user_choice(telegram_id, choice):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    collection.update_one(filter=query, update={
+        '$addToSet':{
+            'gym': {'id_gym': choice,
+                    'status_gym': ''}
+        }
+    }, upsert=True)

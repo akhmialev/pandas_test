@@ -2,15 +2,20 @@ import locale
 
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
-from config import TOKEN
+from aiogram.utils.exceptions import MessageNotModified
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
+from config import TOKEN
+from keyboard import *
 from work_with_bd import *
 
 bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
 
 user_activiti_day = {}
 stack = []
+selected_gyms = set()
 
 
 async def on_startup(_):
@@ -87,26 +92,6 @@ def create_calendar(trainer, tr_id):
     return create_calendar_work_schedule(tr_id, week_days, today)
 
 
-def create_dct_for_db(date):
-    """
-    Функция для формированья словаря, что бы записывать в БД
-    :param date: данные для записи
-        trainer - имя и фамилия терена
-        training_time - время записи клиента
-        training_date - дата записи клиента
-    """
-    trainer, training_time, training_date = date
-    trainer = trainer.split(' ')
-    training_date = '.'.join(training_date.split('.')[1:])
-    dct = {
-        'name': trainer[0],
-        'lname': trainer[1],
-        'time': training_time,
-        'training_date': training_date
-
-    }
-
-
 def get_holiday_date(tr_id):
     """
     Функция берет список выходных дат тренера по его id
@@ -121,23 +106,53 @@ def get_holiday_date(tr_id):
             return trainer['working_schedule']['weekend_days']
 
 
+def create_start_menu():
+    gyms = get_gyms()
+    gyms_button = []
+    for gym in gyms:
+        gym_title = gym['title']
+        if gym_title in selected_gyms:
+            gym_title += " ✅"
+        gyms_button.append(InlineKeyboardButton(text=gym_title, callback_data=f'gym_{gym_title}'))
+    gyms_button.append(InlineKeyboardButton(text='Дальше', callback_data=f'next'))
+    ikb_choice_gym = InlineKeyboardMarkup(row_width=2)
+    ikb_choice_gym.add(*gyms_button)
+    return ikb_choice_gym
+
+
 @dp.message_handler(commands='start')
 async def menu(msg: types.Message):
-    """
-    Функция создает стартовое меню
-    """
     user_id = msg.from_user.id
     username = msg.from_user.username
     first_name = msg.from_user.first_name
     create_user_in_db(user_id, username, first_name)
-    kb = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    b1 = KeyboardButton(text='Удалить_запись')
-    b2 = KeyboardButton(text='Записаться')
-    kb.add(b2, b1)
-    await bot.send_message(chat_id=msg.from_user.id, text='Сделайте выбор', reply_markup=kb)
+    keyboard = create_start_menu()
+    await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренажерный зал', reply_markup=keyboard)
 
 
-@dp.message_handler()
+@dp.callback_query_handler(lambda cb: cb.data.startswith('gym_'))
+async def click_start_menu(cb: types.CallbackQuery):
+    selected_gym = cb.data.split('_')[1]
+    if selected_gym in selected_gyms:
+        # удаляем галочку у предыдущего выбранного зала
+        for gym in selected_gyms.copy():
+            if gym != selected_gym and gym in selected_gym:
+                selected_gyms.remove(gym)
+        selected_gyms.remove(selected_gym)
+    else:
+        selected_gyms.add(selected_gym)
+        # удаляем галочку у других выбранных залов
+        for gym in selected_gyms.copy():
+            if gym != selected_gym and gym in selected_gym:
+                selected_gyms.remove(gym)
+    keyboard = create_start_menu()
+    try:
+        await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
+                                            reply_markup=keyboard)
+    except MessageNotModified:
+        pass
+
+
 async def send_choice_all_trainers(msg: types.Message):
     """
     Функция вывода выбора тренеров
