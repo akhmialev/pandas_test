@@ -10,8 +10,7 @@ from keyboard import *
 from work_with_bd import *
 
 bot = Bot(token=TOKEN)
-storage = MemoryStorage()
-dp = Dispatcher(bot, storage=storage)
+dp = Dispatcher(bot)
 
 user_activiti_day = {}
 stack = []
@@ -92,6 +91,12 @@ def create_calendar(trainer, tr_id):
     return create_calendar_work_schedule(tr_id, week_days, today)
 
 
+def delete_excess_click(telegram_id, selected_gym):
+    for gym in selected_gyms.copy():
+        if gym != selected_gym and gym in selected_gym:
+            return selected_gyms.remove(gym)
+
+
 def get_holiday_date(tr_id):
     """
     Функция берет список выходных дат тренера по его id
@@ -112,7 +117,7 @@ def create_start_menu():
     for gym in gyms:
         gym_title = gym['title']
         if gym_title in selected_gyms:
-            gym_title += " ✅"
+            gym_title = "✅ " + gym_title
         gyms_button.append(InlineKeyboardButton(text=gym_title, callback_data=f'gym_{gym_title}'))
     gyms_button.append(InlineKeyboardButton(text='Дальше', callback_data=f'next'))
     ikb_choice_gym = InlineKeyboardMarkup(row_width=2)
@@ -133,24 +138,33 @@ async def menu(msg: types.Message):
 @dp.callback_query_handler(lambda cb: cb.data.startswith('gym_'))
 async def click_start_menu(cb: types.CallbackQuery):
     selected_gym = cb.data.split('_')[1]
+    telegram_id = cb.from_user.id
+    if '✅ ' in cb.data.split('_')[1]:
+        delete_user_choice(telegram_id, selected_gym.split(' ')[1])
+    else:
+        save_user_choice(telegram_id, selected_gym)
+
     if selected_gym in selected_gyms:
-        # удаляем галочку у предыдущего выбранного зала
-        for gym in selected_gyms.copy():
-            if gym != selected_gym and gym in selected_gym:
-                selected_gyms.remove(gym)
+        delete_excess_click(telegram_id, selected_gym)
         selected_gyms.remove(selected_gym)
+
     else:
         selected_gyms.add(selected_gym)
-        # удаляем галочку у других выбранных залов
-        for gym in selected_gyms.copy():
-            if gym != selected_gym and gym in selected_gym:
-                selected_gyms.remove(gym)
+        delete_excess_click(telegram_id, selected_gym)
     keyboard = create_start_menu()
     try:
         await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
                                             reply_markup=keyboard)
     except MessageNotModified:
         pass
+
+
+@dp.callback_query_handler(lambda cb: cb.data.startswith('next'))
+async def click_next_in_start_menu(cb: types.CallbackQuery):
+    ik = InlineKeyboardMarkup(row_width=1)
+    ikb = InlineKeyboardButton(text='hi', callback_data='123')
+    ik.add(ikb)
+    await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id, reply_markup=ik)
 
 
 async def send_choice_all_trainers(msg: types.Message):

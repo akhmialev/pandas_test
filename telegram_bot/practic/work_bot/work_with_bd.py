@@ -222,8 +222,20 @@ def save_user_choice(telegram_id, choice):
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
     collection.update_one(filter=query, update={
-        '$addToSet':{
+        '$addToSet': {
             'gym': {'id_gym': choice,
                     'status_gym': ''}
         }
     }, upsert=True)
+
+def delete_user_choice(telegram_id, choice):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    collection.update_one(filter=query, update={
+        '$pull': {
+            'gym': {'id_gym': choice}
+        }
+    }, upsert=True)
+
+
