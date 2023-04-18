@@ -31,10 +31,7 @@ def create_user_in_db(user_id, username, first_name):
             "id_trainers": "",
             "status": "",
         }],
-        "gym": [{
-            "id_gym": "",
-            "status_gym": "",
-        }]
+        "gym": []
     }
     query = {'id_telegram': str(user_id)}
     users = collection.find_one(query)
@@ -237,5 +234,32 @@ def delete_user_choice(telegram_id, choice):
             'gym': {'id_gym': choice}
         }
     }, upsert=True)
+
+def get_user_gyms(telegram_id):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    user = collection.find_one(query)
+    return user['gym']
+
+
+
+
+def save_user_data(telegram_id, selected_type_gym):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id), 'gym.id_gym': selected_type_gym}
+    update = {'$set': {'gym.$.status_gym': 'основной'}}
+    collection.update_one(filter=query, update=update, upsert=True)
+
+def delete_user_data(telegram_id, selected_type_gym):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id), 'gym.id_gym': selected_type_gym}
+    update = {'$set': {'gym.$.status_gym': ''}}
+    collection.update_one(filter=query, update=update, upsert=True)
+
+
+
 
 
