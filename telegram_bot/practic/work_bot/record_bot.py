@@ -27,7 +27,7 @@ def create_calendar_if_not_work_schedule(week_days, today, trainer, tr_id, holid
     :param today: сегодня
     :param trainer: тренер
     :param tr_id: тренер ID
-    :param holiday_days: вызодные дни
+    :param holiday_days: выходные дни
     """
     buttons = []
     ikb = InlineKeyboardMarkup(row_width=7)
@@ -119,9 +119,9 @@ def delete_excess_click_in_additional_main_menu(selected_type_gym):
         Функция для удаления ненужного клика(без нее при нажатии будет лишний клик)
     :param selected_type_gym: выбранный зал
     """
-    for type in selected_type_gyms.copy():
-        if type != selected_type_gym and type in selected_type_gym:
-            return selected_type_gyms.remove(type)
+    for selected_type in selected_type_gyms.copy():
+        if selected_type != selected_type_gym and selected_type in selected_type_gym:
+            return selected_type_gyms.remove(selected_type)
 
 
 def get_holiday_date(tr_id):
