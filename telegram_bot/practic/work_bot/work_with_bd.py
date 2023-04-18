@@ -7,7 +7,7 @@ from config import URL_FOR_CONNECT_TO_DB
 
 def connect_to_mongodb():
     """
-    Функция подключения к базе данных
+        Функция подключения к базе данных
     """
     client = pymongo.MongoClient(URL_FOR_CONNECT_TO_DB)
     db = client['record_bot']
@@ -40,6 +40,9 @@ def create_user_in_db(user_id, username, first_name):
 
 
 def update_user_save(telegram_id, tr_id):
+    """
+        Функция для обновления данных пользователя
+    """
     data = {'id_trainers': tr_id,
             'status': ''}
     db = connect_to_mongodb()
@@ -47,8 +50,6 @@ def update_user_save(telegram_id, tr_id):
     query = {'id_telegram': str(telegram_id)}
     my_data = {'$addToSet': {'trainers': data}}
     collection.update_one(query, my_data)
-
-
 
 
 def get_work_time(tr_id, date):
@@ -85,7 +86,7 @@ def check_time(tr_id, date):
 
 def send_all_trainers():
     """
-    Функция подключения к бд и возврата коллекции со всеми тренерами.
+        Функция подключения к бд и возврата коллекции со всеми тренерами.
     """
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
@@ -95,7 +96,7 @@ def send_all_trainers():
 
 def send_trainer_for_query(query):
     """
-    Функция для поиска нужного тренера.
+        Функция для поиска нужного тренера.
     """
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
@@ -104,6 +105,9 @@ def send_trainer_for_query(query):
 
 
 def save_record_to_trainer(telegram_id, record_date, record_time, tr_id):
+    """
+        Функция для сохранения записи к тренеру
+    """
     data = {
         'id_user': telegram_id,
         'date': record_date,
@@ -134,6 +138,7 @@ def check_user_click(telegram_id, tr_id):
     """
         Функция проверяет записан ли клиент
     :param telegram_id: телеграм ID
+    :param tr_id: ID тренера
     """
     db = connect_to_mongodb()
     collection = db.get_collection('users_check_click')
@@ -191,6 +196,9 @@ def take_trainer_name(tr_id):
 
 
 def take_working_schedule(tr_id):
+    """
+        Функция берет рабочий график тренера
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
     id_tr = ObjectId(tr_id)
@@ -199,22 +207,34 @@ def take_working_schedule(tr_id):
 
 
 def get_gyms():
+    """
+        Функция берет все залы
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('gyms')
     gyms = collection.find()
     return gyms
 
+
 def check_user_in_menu(user_id):
+    # не использую
+    """
+        Функция проверяет есть ли пользователь
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(user_id)}
     user = collection.find_one(query)
     for u in user['gym']:
-        if u['id_gym'] == None:
+        if u['id_gym'] is None:
             return False
         return True
 
+
 def save_user_choice(telegram_id, choice):
+    """
+        Функция для сохранения залов пользователя
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -225,7 +245,11 @@ def save_user_choice(telegram_id, choice):
         }
     }, upsert=True)
 
+
 def delete_user_choice(telegram_id, choice):
+    """
+        Функция для удаления залов пользователя
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -235,7 +259,11 @@ def delete_user_choice(telegram_id, choice):
         }
     }, upsert=True)
 
+
 def get_user_gyms(telegram_id):
+    """
+        Функция возвращает все залы пользователя
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -243,23 +271,23 @@ def get_user_gyms(telegram_id):
     return user['gym']
 
 
-
-
 def save_user_data(telegram_id, selected_type_gym):
+    """
+        Функция для сохранения основных залов
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id), 'gym.id_gym': selected_type_gym}
     update = {'$set': {'gym.$.status_gym': 'основной'}}
     collection.update_one(filter=query, update=update, upsert=True)
 
+
 def delete_user_data(telegram_id, selected_type_gym):
+    """
+        Функция для удаления основных залов пользователя
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id), 'gym.id_gym': selected_type_gym}
     update = {'$set': {'gym.$.status_gym': ''}}
     collection.update_one(filter=query, update=update, upsert=True)
-
-
-
-
-
