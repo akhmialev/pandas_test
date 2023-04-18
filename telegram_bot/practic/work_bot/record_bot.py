@@ -1,9 +1,7 @@
 import locale
 
 from aiogram import Bot, Dispatcher, types, executor
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from aiogram.utils.exceptions import MessageNotModified
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 from config import TOKEN
 from keyboard import *
@@ -23,6 +21,14 @@ async def on_startup(_):
 
 
 def create_calendar_if_not_work_schedule(week_days, today, trainer, tr_id, holiday_days):
+    """
+        Функция для создания календаря если нету рабочего графика
+    :param week_days: дни недели
+    :param today: сегодня
+    :param trainer: тренер
+    :param tr_id: тренер ID
+    :param holiday_days: вызодные дни
+    """
     buttons = []
     ikb = InlineKeyboardMarkup(row_width=7)
 
@@ -52,6 +58,12 @@ def create_calendar_if_not_work_schedule(week_days, today, trainer, tr_id, holid
 
 
 def create_calendar_work_schedule(tr_id, week_days, today):
+    """
+        Функция длс создания календаря по рабочему графику
+    :param tr_id: тренер ID
+    :param week_days: дни недели
+    :param today: сегодня
+    """
     query = {'_id': ObjectId(tr_id)}
     trainer = send_trainer_for_query(query)
     data_lst = []
@@ -93,12 +105,20 @@ def create_calendar(trainer, tr_id):
 
 
 def delete_excess_click(selected_gym):
+    """
+    Функция для удаления ненужного клика(без нее при нажатии будет лишний клик)
+    :param selected_gym: выбранный зал
+    """
     for gym in selected_gyms.copy():
         if gym != selected_gym and gym in selected_gym:
             return selected_gyms.remove(gym)
 
 
 def delete_excess_click_in_additional_main_menu(selected_type_gym):
+    """
+        Функция для удаления ненужного клика(без нее при нажатии будет лишний клик)
+    :param selected_type_gym: выбранный зал
+    """
     for type in selected_type_gyms.copy():
         if type != selected_type_gym and type in selected_type_gym:
             return selected_type_gyms.remove(type)
@@ -106,7 +126,7 @@ def delete_excess_click_in_additional_main_menu(selected_type_gym):
 
 def get_holiday_date(tr_id):
     """
-    Функция берет список выходных дат тренера по его id
+        Функция берет список выходных дат тренера по его id
     :param tr_id: id тренера
     :return: возвращает список выходных дат
     """
@@ -121,7 +141,7 @@ def get_holiday_date(tr_id):
 def create_start_menu():
     """
         Функция для создания клавиатуры с залами,
-         проверка для того что бы добавлять галочки если второе произошло нажатие
+        проверка для того что бы добавлять галочки если второе произошло нажатие
     """
     gyms = get_gyms()
     gyms_button = []
@@ -138,6 +158,10 @@ def create_start_menu():
 
 
 def create_additional_mian_choice_menu(telegram_id):
+    """
+       Функция для создания клавиатуры в которой можно выбрать основные залы,
+       проверка для того что бы добавлять галочки если второе произошло нажатие
+   """
     user_gyms = get_user_gyms(telegram_id)
     buttons = []
     for ug in user_gyms:
@@ -153,6 +177,9 @@ def create_additional_mian_choice_menu(telegram_id):
 
 @dp.message_handler(commands='start')
 async def menu(msg: types.Message):
+    """
+        Функция вызова стартового меню
+    """
     user_id = msg.from_user.id
     username = msg.from_user.username
     first_name = msg.from_user.first_name
@@ -164,6 +191,9 @@ async def menu(msg: types.Message):
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('gym_'))
 async def click_start_menu(cb: types.CallbackQuery):
+    """
+        Обработчик нажатия кнопок в меню для выбора залов
+    """
     selected_gym = cb.data.split('_')[1]
     telegram_id = cb.from_user.id
     if '✅ ' in cb.data.split('_')[1]:
@@ -190,6 +220,9 @@ async def click_start_menu(cb: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('choice_'))
 async def click_choice_additional_main(cd: types.CallbackQuery):
+    """
+        Обработчик нажатия кнопок меню для выбора основных залов
+    """
     selected_type_gym = cd.data.split("_")[1]
     telegram_id = cd.from_user.id
     if 'основной ' not in (cd.data.split('_')[1]):
@@ -197,7 +230,6 @@ async def click_choice_additional_main(cd: types.CallbackQuery):
     else:
         selected_type_gym = selected_type_gym.split(' ')[1]
         delete_user_data(telegram_id, selected_type_gym)
-
 
     if selected_type_gym in selected_type_gyms:
         delete_excess_click_in_additional_main_menu(selected_type_gym)
@@ -217,6 +249,9 @@ async def click_choice_additional_main(cd: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('next'))
 async def click_next_in_start_menu(cb: types.CallbackQuery):
+    """
+        Обработчик кнопки дальше
+    """
     telegram_id = cb.from_user.id
     ik = create_additional_mian_choice_menu(telegram_id)
     await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, reply_markup=ik,
@@ -225,7 +260,7 @@ async def click_next_in_start_menu(cb: types.CallbackQuery):
 
 async def send_choice_all_trainers(msg: types.Message):
     """
-    Функция вывода выбора тренеров
+        Функция вывода выбора тренеров
     """
     if 'записаться' in msg.text.lower():
         # Нее разобрался почему не работает с русским в 125 строчке callback_data
@@ -252,13 +287,16 @@ async def send_choice_all_trainers(msg: types.Message):
 
 @dp.callback_query_handler(lambda c: c.data.startswith('ignore'))
 async def calendar_empty_days(cb: types.CallbackQuery):
+    """
+        Функция заглушка, что бы не висело сверху надпись "загрузка"
+    """
     await bot.answer_callback_query(callback_query_id=cb.id)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('day_week_'))
 async def calendar_days_click(cb: types.CallbackQuery):
     """
-    Функция для отображения полного названия месяца при клике в календаре на месяц
+        Функция для отображения полного названия месяца при клике в календаре на месяц
     """
     day = cb.data.split('_')[2]
     days_dct = {
@@ -278,7 +316,7 @@ async def calendar_days_click(cb: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data.startswith('trainer_'))
 async def calendar_record_trainers(cb: types.CallbackQuery):
     """
-    Функция выводит рабочие даты тренера.
+        Функция выводит рабочие даты тренера.
     """
     trainer = cb.data.split('_')[1]
     tr_id = cb.data.split('_')[2]
@@ -291,7 +329,7 @@ async def calendar_record_trainers(cb: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data.startswith('record_'))
 async def send_time_for_record(cb: types.CallbackQuery):
     """
-    Функция выводит меню времени для записи
+        Функция выводит меню времени для записи
     """
     list_data = cb.data.split('_')
     date = list_data[1]
@@ -321,7 +359,7 @@ async def send_time_for_record(cb: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data.startswith('week_'))
 async def send_record_time_week_day(cb: types.CallbackQuery):
     """
-    Функция для отображения текста если пытаются записаться на выходной день
+        Функция для отображения текста если пытаются записаться на выходной день
     """
     list_data = cb.data.split('_')
     status = list_data[0]
@@ -335,7 +373,7 @@ async def send_record_time_week_day(cb: types.CallbackQuery):
 @dp.callback_query_handler(lambda c: c.data.startswith('finish_'))
 async def finish_record_and_add_to_db(cd: types.CallbackQuery):
     """
-    Функция делает запись на определенное время и делает проверку, записаться можно только раз в день
+        Функция делает запись на определенное время и делает проверку, записаться можно только раз в день
     """
     telegram_id = str(cd.from_user.id)
     record_date = cd.data.split('_')[1]
