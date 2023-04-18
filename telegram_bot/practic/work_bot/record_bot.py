@@ -15,6 +15,7 @@ dp = Dispatcher(bot)
 user_activiti_day = {}
 stack = []
 selected_gyms = set()
+selected_type_gyms = set()
 
 
 async def on_startup(_):
@@ -91,10 +92,16 @@ def create_calendar(trainer, tr_id):
     return create_calendar_work_schedule(tr_id, week_days, today)
 
 
-def delete_excess_click(telegram_id, selected_gym):
+def delete_excess_click(selected_gym):
     for gym in selected_gyms.copy():
         if gym != selected_gym and gym in selected_gym:
             return selected_gyms.remove(gym)
+
+
+def delete_excess_click_in_additional_main_menu(selected_type_gym):
+    for type in selected_type_gyms.copy():
+        if type != selected_type_gym and type in selected_type_gym:
+            return selected_type_gyms.remove(type)
 
 
 def get_holiday_date(tr_id):
@@ -112,6 +119,10 @@ def get_holiday_date(tr_id):
 
 
 def create_start_menu():
+    """
+        Функция для создания клавиатуры с залами,
+         проверка для того что бы добавлять галочки если второе произошло нажатие
+    """
     gyms = get_gyms()
     gyms_button = []
     for gym in gyms:
@@ -120,9 +131,24 @@ def create_start_menu():
             gym_title = "✅ " + gym_title
         gyms_button.append(InlineKeyboardButton(text=gym_title, callback_data=f'gym_{gym_title}'))
     gyms_button.append(InlineKeyboardButton(text='Дальше', callback_data=f'next'))
-    ikb_choice_gym = InlineKeyboardMarkup(row_width=2)
+    ikb_choice_gym = InlineKeyboardMarkup(row_width=1)
     ikb_choice_gym.add(*gyms_button)
+    stack.append(ikb_choice_gym)
     return ikb_choice_gym
+
+
+def create_additional_mian_choice_menu(telegram_id):
+    user_gyms = get_user_gyms(telegram_id)
+    buttons = []
+    for ug in user_gyms:
+        title = ug['id_gym']
+        if title in selected_type_gyms:
+            title = "основной " + ug['id_gym']
+        buttons.append(InlineKeyboardButton(text=title, callback_data=f'choice_{title}'))
+    buttons.append(InlineKeyboardButton(text='Дальше', callback_data='next_step'))
+    ik_choice_additional_main = InlineKeyboardMarkup(row_width=1)
+    ik_choice_additional_main.add(*buttons)
+    return ik_choice_additional_main
 
 
 @dp.message_handler(commands='start')
@@ -133,6 +159,7 @@ async def menu(msg: types.Message):
     create_user_in_db(user_id, username, first_name)
     keyboard = create_start_menu()
     await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренажерный зал', reply_markup=keyboard)
+    # тут надо дописать if если пользователь  базе уже есть то ... сейчас функционал только для нового пользователя
 
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('gym_'))
@@ -145,12 +172,14 @@ async def click_start_menu(cb: types.CallbackQuery):
         save_user_choice(telegram_id, selected_gym)
 
     if selected_gym in selected_gyms:
-        delete_excess_click(telegram_id, selected_gym)
+        delete_excess_click(selected_gym)
         selected_gyms.remove(selected_gym)
+        await bot.answer_callback_query(callback_query_id=cb.id)
 
     else:
         selected_gyms.add(selected_gym)
-        delete_excess_click(telegram_id, selected_gym)
+        delete_excess_click(selected_gym)
+        await bot.answer_callback_query(callback_query_id=cb.id)
     keyboard = create_start_menu()
     try:
         await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
@@ -159,12 +188,39 @@ async def click_start_menu(cb: types.CallbackQuery):
         pass
 
 
+@dp.callback_query_handler(lambda cb: cb.data.startswith('choice_'))
+async def click_choice_additional_main(cd: types.CallbackQuery):
+    selected_type_gym = cd.data.split("_")[1]
+    telegram_id = cd.from_user.id
+    if 'основной ' not in (cd.data.split('_')[1]):
+        save_user_data(telegram_id, selected_type_gym)
+    else:
+        selected_type_gym = selected_type_gym.split(' ')[1]
+        delete_user_data(telegram_id, selected_type_gym)
+
+
+    if selected_type_gym in selected_type_gyms:
+        delete_excess_click_in_additional_main_menu(selected_type_gym)
+        selected_type_gyms.remove(selected_type_gym)
+        await bot.answer_callback_query(callback_query_id=cd.id)
+    else:
+        selected_type_gyms.add(selected_type_gym)
+        delete_excess_click_in_additional_main_menu(selected_type_gym)
+        await bot.answer_callback_query(callback_query_id=cd.id)
+    keyboard = create_additional_mian_choice_menu(telegram_id)
+    try:
+        await bot.edit_message_reply_markup(chat_id=cd.from_user.id, message_id=cd.message.message_id,
+                                            reply_markup=keyboard)
+    except MessageNotModified:
+        pass
+
+
 @dp.callback_query_handler(lambda cb: cb.data.startswith('next'))
 async def click_next_in_start_menu(cb: types.CallbackQuery):
-    ik = InlineKeyboardMarkup(row_width=1)
-    ikb = InlineKeyboardButton(text='hi', callback_data='123')
-    ik.add(ikb)
-    await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id, reply_markup=ik)
+    telegram_id = cb.from_user.id
+    ik = create_additional_mian_choice_menu(telegram_id)
+    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, reply_markup=ik,
+                                text="Выберите основные залы")
 
 
 async def send_choice_all_trainers(msg: types.Message):
