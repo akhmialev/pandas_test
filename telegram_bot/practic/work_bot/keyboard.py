@@ -1,8 +1,6 @@
-import locale
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 import datetime
 from bson import ObjectId
-from record_bot import get_holiday_date
 from tools import selected_gyms, selected_type_gyms
 from work_with_bd import send_trainer_for_query, take_working_schedule, get_gyms, get_user_gyms
 
@@ -116,20 +114,4 @@ def create_calendar_work_schedule(tr_id, week_days, today):
     return ikb
 
 
-def create_calendar(trainer, tr_id):
-    """
-    Функция создает календарь с текущим днем плюс 4 недели, так же учитывает выходные дни тренера,
-     ставит вместо даты стикер.
-    :param trainer: имя фамилия тренера.
-    :param tr_id: id тренера из базы данных.
-    """
-    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
-    holiday_days = get_holiday_date(tr_id)
-    week_days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
-    today = datetime.datetime.today()
 
-    check_work_schedule = take_working_schedule(tr_id)
-    # if check_work_schedule <= 27:
-    #     return create_calendar_if_not_work_schedule(week_days, today, trainer, tr_id, holiday_days)
-    # else:
-    return create_calendar_work_schedule(tr_id, week_days, today)
