@@ -1,6 +1,3 @@
-import locale
-import datetime
-from keyboard import create_calendar_work_schedule
 from work_with_bd import send_all_trainers, take_working_schedule
 
 selected_gyms = set()
@@ -27,23 +24,7 @@ def delete_excess_click_in_additional_main_menu(selected_type_gym):
             return selected_type_gyms.remove(selected_type)
 
 
-def create_calendar(trainer, tr_id):
-    """
-    Функция создает календарь с текущим днем плюс 4 недели, так же учитывает выходные дни тренера,
-     ставит вместо даты стикер.
-    :param trainer: имя фамилия тренера.
-    :param tr_id: id тренера из базы данных.
-    """
-    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
-    holiday_days = get_holiday_date(tr_id)
-    week_days = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс']
-    today = datetime.datetime.today()
 
-    check_work_schedule = take_working_schedule(tr_id)
-    # if check_work_schedule <= 27:
-    #     return create_calendar_if_not_work_schedule(week_days, today, trainer, tr_id, holiday_days)
-    # else:
-    return create_calendar_work_schedule(tr_id, week_days, today)
 
 
 def get_holiday_date(tr_id):
