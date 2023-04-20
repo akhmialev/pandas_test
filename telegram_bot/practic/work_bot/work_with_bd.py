@@ -27,10 +27,7 @@ def create_user_in_db(user_id, username, first_name):
         "username": username,
         "first_name": first_name,
         "id_telegram": str(user_id),
-        "trainers": [{
-            "id_trainers": "",
-            "status": "",
-        }],
+        "trainers": [],
         "gym": []
     }
     query = {'id_telegram': str(user_id)}
@@ -230,6 +227,15 @@ def check_user_in_menu(user_id):
             return False
         return True
 
+def check_user_in_db(user_id):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(user_id)}
+    user = collection.find_one(query)
+    if user is None:
+        return False
+    return True
+
 
 def save_user_choice(telegram_id, choice):
     """
@@ -291,3 +297,32 @@ def delete_user_data(telegram_id, selected_type_gym):
     query = {'id_telegram': str(telegram_id), 'gym.id_gym': selected_type_gym}
     update = {'$set': {'gym.$.status_gym': ''}}
     collection.update_one(filter=query, update=update, upsert=True)
+
+def check_user_trainer(id_telegram):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': id_telegram}
+    trainer = collection.find_one(query)
+    if trainer['trainers'] == []:
+        return True
+    else:
+        return False
+
+def get_id_trainers(gym):
+    db = connect_to_mongodb()
+    collection = db.get_collection('gyms')
+    query = {'title': str(gym)}
+    trainers = collection.find_one(query)
+    trainer_id = []
+    for trainer in trainers['trainers']:
+        trainer_id.append(trainer['id'])
+    return trainer_id
+
+def get_trainers(trainers_id):
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    trainers = []
+    for trainer in trainers_id:
+        tr = collection.find_one({'_id': ObjectId(trainer)})
+        trainers.append(f"{tr['name']} {tr['last_name']}")
+    return trainers

@@ -7,10 +7,13 @@ from work_with_bd import send_trainer_for_query, take_working_schedule, get_gyms
 
 stack = []
 
-kb_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-b1 = KeyboardButton(text='Удалить_запись')
-b2 = KeyboardButton(text='Записаться')
-kb_menu.add(b2, b1)
+
+def create_record_del_record_menu():
+    kb_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    b1 = KeyboardButton(text='Записаться')
+    b2 = KeyboardButton(text='Удалить запись')
+    b3 = KeyboardButton(text='Изменить зал')
+    return kb_menu.add(b1).add(b2, b3)
 
 
 def create_start_menu():
@@ -48,6 +51,23 @@ def create_additional_mian_choice_menu(telegram_id):
     ik_choice_additional_main = InlineKeyboardMarkup(row_width=1)
     ik_choice_additional_main.add(*buttons)
     return ik_choice_additional_main
+
+
+def send_gym_for_record(telegram_id):
+    gyms = get_user_gyms(telegram_id)
+    main_gyms = []
+    extra_gyms = []
+    for gym in gyms:
+        if gym['status_gym'] == 'основной':
+            title = f"{gym['id_gym']} {gym['status_gym']}"
+            main_gyms.append(InlineKeyboardButton(text=title, callback_data=f'recordgym_{title}'))
+        else:
+            title = f"{gym['id_gym']} дополнительный"
+            extra_gyms.append(InlineKeyboardButton(text=title, callback_data=f'recordgym_{title}'))
+    buttons = main_gyms + extra_gyms
+    ikb = InlineKeyboardMarkup(row_width=1)
+    ikb.add(*buttons)
+    return ikb
 
 
 def create_calendar_if_not_work_schedule(week_days, today, trainer, tr_id, holiday_days):
@@ -114,6 +134,7 @@ def create_calendar_work_schedule(tr_id, week_days, today):
     stack.append(ikb)
     return ikb
 
+
 def create_calendar(trainer, tr_id):
     """
     Функция создает календарь с текущим днем плюс 4 недели, так же учитывает выходные дни тренера,
@@ -131,5 +152,3 @@ def create_calendar(trainer, tr_id):
     #     return create_calendar_if_not_work_schedule(week_days, today, trainer, tr_id, holiday_days)
     # else:
     return create_calendar_work_schedule(tr_id, week_days, today)
-
-
