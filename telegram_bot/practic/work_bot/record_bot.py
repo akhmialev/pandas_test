@@ -1,5 +1,4 @@
 from aiogram import Bot, Dispatcher, types, executor
-from aiogram.types import CallbackQuery
 from aiogram.utils.exceptions import MessageNotModified
 
 from config import TOKEN
@@ -110,8 +109,8 @@ async def click_next_in_start_menu(cb: types.CallbackQuery):
         Обработчик кнопки дальше
     """
     telegram_id = cb.from_user.id
-    ik = create_additional_mian_choice_menu(telegram_id)
-    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, reply_markup=ik,
+    menu = create_additional_mian_choice_menu(telegram_id)
+    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, reply_markup=menu,
                                 text="Выберите основные залы")
 
 
@@ -151,16 +150,33 @@ async def send_choice_all_trainers(msg: types.Message):
 async def add_trainers_to_user(cb: types.CallbackQuery):
     gym = cb.data.split('_')[1].split(' ')[0]
     trainers_id = get_id_trainers(gym)
-    trainers = get_trainers(trainers_id)
-    buttons = []
-    for trainer in trainers:
-        title = trainer
-        buttons.append(InlineKeyboardButton(text=title, callback_data=f'trainer_{title}'))
-    buttons.append(InlineKeyboardButton(text='Сохранить тренеров', callback_data='save_trainer'))
-    ikb = InlineKeyboardMarkup(row_width=1)
-    ikb.add(*buttons)
+    menu = create_choice_trainer(trainers_id, gym)
     await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, text='Выберите тренеров',
-                                reply_markup=ikb)
+                                reply_markup=menu)
+
+
+@dp.callback_query_handler(lambda cb: cb.data.startswith('trainer'))
+async def click_choice_trainer(cb: types.CallbackQuery):
+    click = cb.data.split('_')[1]
+    gym = cb.data.split('_')[2]
+    if "✅ " not in cb.data.split('_')[1]:
+        print('save in db')
+    else:
+        print('delete in db')
+
+    trainers_id = get_id_trainers(gym)
+    if click in selected_trainers:
+        delete_excess_click_in_choice_trainer(click)
+        selected_trainers.remove(click)
+    else:
+        selected_trainers.add(click)
+        delete_excess_click_in_choice_trainer(click)
+    keyboard = create_choice_trainer(trainers_id, gym)
+    try:
+        await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
+                                            reply_markup=keyboard)
+    except MessageNotModified:
+        pass
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('ignore'))

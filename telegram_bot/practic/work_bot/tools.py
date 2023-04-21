@@ -2,6 +2,7 @@ from work_with_bd import send_all_trainers, take_working_schedule
 
 selected_gyms = set()
 selected_type_gyms = set()
+selected_trainers = set()
 
 
 def delete_excess_click(selected_gym):
@@ -23,9 +24,10 @@ def delete_excess_click_in_additional_main_menu(selected_type_gym):
         if selected_type != selected_type_gym and selected_type in selected_type_gym:
             return selected_type_gyms.remove(selected_type)
 
-
-
-
+def delete_excess_click_in_choice_trainer(selected_trainer):
+    for trainer in selected_trainers.copy():
+        if trainer != selected_trainer and trainer in selected_trainer:
+            return selected_trainers.remove(trainer)
 
 def get_holiday_date(tr_id):
     """

@@ -2,8 +2,8 @@ import locale
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 import datetime
 from bson import ObjectId
-from tools import selected_gyms, selected_type_gyms, get_holiday_date
-from work_with_bd import send_trainer_for_query, take_working_schedule, get_gyms, get_user_gyms
+from tools import selected_gyms, selected_type_gyms, get_holiday_date, selected_trainers
+from work_with_bd import send_trainer_for_query, take_working_schedule, get_gyms, get_user_gyms, get_trainers
 
 stack = []
 
@@ -52,6 +52,18 @@ def create_additional_mian_choice_menu(telegram_id):
     ik_choice_additional_main.add(*buttons)
     return ik_choice_additional_main
 
+def create_choice_trainer(trainers_id, gym):
+    trainers = get_trainers(trainers_id)
+    buttons = []
+    for trainer in trainers:
+        title = trainer
+        if title in selected_trainers:
+            title = "✅ " + title
+        buttons.append(InlineKeyboardButton(text=title, callback_data=f'trainer_{title}_{gym}'))
+    buttons.append(InlineKeyboardButton(text='Сохранить тренеров', callback_data='save_trainer'))
+    ikb = InlineKeyboardMarkup(row_width=1)
+    ikb.add(*buttons)
+    return ikb
 
 def send_gym_for_record(telegram_id):
     gyms = get_user_gyms(telegram_id)
