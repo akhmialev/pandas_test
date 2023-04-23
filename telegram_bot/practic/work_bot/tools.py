@@ -24,10 +24,16 @@ def delete_excess_click_in_additional_main_menu(selected_type_gym):
         if selected_type != selected_type_gym and selected_type in selected_type_gym:
             return selected_type_gyms.remove(selected_type)
 
+
 def delete_excess_click_in_choice_trainer(selected_trainer):
+    """
+        Функция для удаления ненужного клика(без нее при нажатии будет лишний клик)
+    :param selected_trainer: выбранный тренер
+    """
     for trainer in selected_trainers.copy():
         if trainer != selected_trainer and trainer in selected_trainer:
             return selected_trainers.remove(trainer)
+
 
 def get_holiday_date(tr_id):
     """
