@@ -128,7 +128,6 @@ def read_record(url):
     res = {'id': 1}
     result = collections.find_one(res)
 
-    print(result)
 
 
 def check_user_click(telegram_id, tr_id):
@@ -227,7 +226,11 @@ def check_user_in_menu(user_id):
             return False
         return True
 
+
 def check_user_in_db(user_id):
+    """
+        Функция проверяет есть ли user в нашей базе данных
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(user_id)}
@@ -298,7 +301,11 @@ def delete_user_data(telegram_id, selected_type_gym):
     update = {'$set': {'gym.$.status_gym': ''}}
     collection.update_one(filter=query, update=update, upsert=True)
 
+
 def check_user_trainer(id_telegram):
+    """
+        Функция проверяет есть ли тренера у user
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': id_telegram}
@@ -308,7 +315,11 @@ def check_user_trainer(id_telegram):
     else:
         return False
 
+
 def get_id_trainers(gym):
+    """
+        Функция возвращает id тренера
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('gyms')
     query = {'title': str(gym)}
@@ -318,7 +329,11 @@ def get_id_trainers(gym):
         trainer_id.append(trainer['id'])
     return trainer_id
 
+
 def get_trainers(trainers_id):
+    """
+        Функция возвращает список имен тренеров
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
     trainers = []
@@ -326,3 +341,44 @@ def get_trainers(trainers_id):
         tr = collection.find_one({'_id': ObjectId(trainer)})
         trainers.append(f"{tr['name']} {tr['last_name']}")
     return trainers
+
+
+def save_trainer_in_user(save_data, telegram_id):
+    """
+        Функция для сохранения выбранных тренеров в users
+    :param save_data: данные тренера
+    :param telegram_id: телеграм id
+    """
+    data = save_data.split(' ')
+    name = data[0]
+    last_name = data[1]
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    query = {'name': name, "last_name": last_name}
+    trainer = collection.find_one(query)
+
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    update = {'$addToSet': {'trainers': {'id': trainer['_id']}}}
+    collection.update_one(query, update)
+
+
+def delete_trainer_in_user(delete_data, telegram_id):
+    """
+        Функция для удаления выбранных тренеров в users
+    :param delete_data: данные тренера
+    :param telegram_id: телеграм id
+    """
+    data = delete_data.split(' ')
+    name = data[0]
+    last_name = data[1]
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    query = {'name': name, 'last_name': last_name}
+    trainer = collection.find_one(query)
+    print(trainer['_id'])
+
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    update = {'$pull': {'trainers': {'id': ObjectId(trainer['_id'])}}}
+    collection.update_one(query, update)
