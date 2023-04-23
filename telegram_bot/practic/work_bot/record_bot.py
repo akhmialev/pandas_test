@@ -1,3 +1,5 @@
+import array
+
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.utils.exceptions import MessageNotModified
 
@@ -33,12 +35,8 @@ async def menu(msg: types.Message):
         await bot.send_message(chat_id=msg.from_user.id, text='Сделайте выбор', reply_markup=menu)
 
 
-# @dp.callback_query_handler(lambda cb: cb.data.startswith('recordgym_'))
-# async def record():
-#     pass
 @dp.callback_query_handler(lambda cb: cb.data.startswith('next_step'))
 async def next_step_menu(cb: types.CallbackQuery):
-    telegram_id = cb.from_user.id
     menu = create_record_del_record_menu()
     await bot.send_message(chat_id=cb.from_user.id, text='Сделайте выбор', reply_markup=menu)
     await bot.edit_message_text(chat_id=cb.from_user.id, text='Основное меню', message_id=cb.message.message_id,
@@ -148,6 +146,9 @@ async def send_choice_all_trainers(msg: types.Message):
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('recordgym'))
 async def add_trainers_to_user(cb: types.CallbackQuery):
+    """
+        Создание меню для добавления тренеров
+    """
     gym = cb.data.split('_')[1].split(' ')[0]
     trainers_id = get_id_trainers(gym)
     menu = create_choice_trainer(trainers_id, gym)
@@ -157,12 +158,19 @@ async def add_trainers_to_user(cb: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('trainer'))
 async def click_choice_trainer(cb: types.CallbackQuery):
+    """
+        Обработчик нажатия кнопок меню для добавления тренеров
+    """
     click = cb.data.split('_')[1]
     gym = cb.data.split('_')[2]
+    save_data = cb.data.split('_')[1]
+    telegram_id = cb.from_user.id
+
     if "✅ " not in cb.data.split('_')[1]:
-        print('save in db')
+        save_trainer_in_user(save_data, telegram_id)
     else:
-        print('delete in db')
+        delete_data = ' '.join(cb.data.split('_')[1].split(' ')[1:])
+        delete_trainer_in_user(delete_data, telegram_id)
 
     trainers_id = get_id_trainers(gym)
     if click in selected_trainers:

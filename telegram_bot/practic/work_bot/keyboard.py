@@ -52,7 +52,12 @@ def create_additional_mian_choice_menu(telegram_id):
     ik_choice_additional_main.add(*buttons)
     return ik_choice_additional_main
 
+
 def create_choice_trainer(trainers_id, gym):
+    """
+        Функция для создания клавиатуры в которой можно выбрать тренеров,
+        проверка для того что бы добавлять галочки (выбран тренер или нет)
+    """
     trainers = get_trainers(trainers_id)
     buttons = []
     for trainer in trainers:
@@ -65,7 +70,11 @@ def create_choice_trainer(trainers_id, gym):
     ikb.add(*buttons)
     return ikb
 
+
 def send_gym_for_record(telegram_id):
+    """
+          Функция для создания клавиатуры, где пользователь выбирает дополнительные или основные залы
+    """
     gyms = get_user_gyms(telegram_id)
     main_gyms = []
     extra_gyms = []
