@@ -1,5 +1,3 @@
-import array
-
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.utils.exceptions import MessageNotModified
 
@@ -31,14 +29,14 @@ async def menu(msg: types.Message):
         await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренажерные залы', reply_markup=keyboard)
     else:
         # pass
-        menu = create_record_del_record_menu()
-        await bot.send_message(chat_id=msg.from_user.id, text='Сделайте выбор', reply_markup=menu)
+        menu_kb = create_record_del_record_menu()
+        await bot.send_message(chat_id=msg.from_user.id, text='Сделайте выбор', reply_markup=menu_kb)
 
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('next_step'))
 async def next_step_menu(cb: types.CallbackQuery):
-    menu = create_record_del_record_menu()
-    await bot.send_message(chat_id=cb.from_user.id, text='Сделайте выбор', reply_markup=menu)
+    menu_kb = create_record_del_record_menu()
+    await bot.send_message(chat_id=cb.from_user.id, text='Сделайте выбор', reply_markup=menu_kb)
     await bot.edit_message_text(chat_id=cb.from_user.id, text='Основное меню', message_id=cb.message.message_id,
                                 reply_markup=InlineKeyboardMarkup())
 
@@ -107,24 +105,24 @@ async def click_next_in_start_menu(cb: types.CallbackQuery):
         Обработчик кнопки дальше
     """
     telegram_id = cb.from_user.id
-    menu = create_additional_mian_choice_menu(telegram_id)
-    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, reply_markup=menu,
+    menu_kb = create_additional_mian_choice_menu(telegram_id)
+    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, reply_markup=menu_kb,
                                 text="Выберите основные залы")
 
 
 @dp.message_handler()
-# тут еще до вывода тренеров нужно выводить залы для того что бы человек выбрал зал а потом из этого зала тренеров!!!
+# тут еще до вывода тренеров нужно выводить залы для того что бы человек выбрал зал, а потом из этого зала тренеров!!!
 async def send_choice_all_trainers(msg: types.Message):
     """
         Функция вывода выбора тренеров
     """
     telegram_id = msg.from_user.id
     if 'записаться' in msg.text.lower():
-        # проверка есть ли юзер 1 раз то нужно вывести сначала залы в которыее он добавить тренеров!
+        # проверка есть ли юзер 1 раз то нужно вывести сначала залы в которые он добавить тренеров!
         if check_user_trainer:
-            menu = send_gym_for_record(telegram_id)
+            menu_kb = send_gym_for_record(telegram_id)
             await bot.send_message(chat_id=msg.from_user.id, text='Выберите зал для добавления тренеров',
-                                   reply_markup=menu)
+                                   reply_markup=menu_kb)
         # в else надо выводит уже тренеров записанных в бд юзера
         else:
             trainers_button = []
@@ -151,9 +149,9 @@ async def add_trainers_to_user(cb: types.CallbackQuery):
     """
     gym = cb.data.split('_')[1].split(' ')[0]
     trainers_id = get_id_trainers(gym)
-    menu = create_choice_trainer(trainers_id, gym)
+    menu_kb = create_choice_trainer(trainers_id, gym)
     await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, text='Выберите тренеров',
-                                reply_markup=menu)
+                                reply_markup=menu_kb)
 
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('trainer'))
@@ -185,6 +183,12 @@ async def click_choice_trainer(cb: types.CallbackQuery):
                                             reply_markup=keyboard)
     except MessageNotModified:
         pass
+
+
+@dp.callback_query_handler(lambda cb: cb.data.startswith('save_trainer'))
+async def save_trainer_button(cb: types.CallbackQuery):
+    print('ok', cb.data)
+    # тут надо вывести тренеров из бд юзера и подключить функционал записи к тренеру
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('ignore'))
