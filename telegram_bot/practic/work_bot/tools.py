@@ -1,4 +1,4 @@
-from work_with_bd import send_all_trainers, take_working_schedule
+from work_with_bd import send_all_trainers
 
 selected_gyms = set()
 selected_type_gyms = set()
