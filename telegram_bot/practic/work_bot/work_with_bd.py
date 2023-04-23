@@ -126,8 +126,7 @@ def read_record(url):
     db = client['record_bot']
     collections = db.get_collection('trainers')
     res = {'id': 1}
-    result = collections.find_one(res)
-
+    collections.find_one(res)
 
 
 def check_user_click(telegram_id, tr_id):
@@ -310,7 +309,7 @@ def check_user_trainer(id_telegram):
     collection = db.get_collection('users')
     query = {'id_telegram': id_telegram}
     trainer = collection.find_one(query)
-    if trainer['trainers'] == []:
+    if not trainer['trainers']:
         return True
     else:
         return False
