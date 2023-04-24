@@ -118,12 +118,11 @@ async def send_choice_all_trainers(msg: types.Message):
     """
     telegram_id = msg.from_user.id
     if 'записаться' in msg.text.lower():
-        # проверка есть ли юзер 1 раз то нужно вывести сначала залы в которые он добавить тренеров!
-        if check_user_trainer:
+        if check_user_trainer(telegram_id):
             menu_kb = send_gym_for_record(telegram_id)
             await bot.send_message(chat_id=msg.from_user.id, text='Выберите зал для добавления тренеров',
                                    reply_markup=menu_kb)
-        # в else надо выводит уже тренеров записанных в бд юзера
+        # в else надо выводить уже тренеров записанных в бд юзера!!!
         else:
             trainers_button = []
             trainers = send_all_trainers()
@@ -187,8 +186,10 @@ async def click_choice_trainer(cb: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('save_trainer'))
 async def save_trainer_button(cb: types.CallbackQuery):
-    print('ok', cb.data)
-    # тут надо вывести тренеров из бд юзера и подключить функционал записи к тренеру
+    menu_kb = create_record_del_record_menu()
+    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, text='Главное меню',
+                                reply_markup=InlineKeyboardMarkup())
+    await bot.send_message(chat_id=cb.from_user.id, text='Сделайте выбор', reply_markup=menu_kb)
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('ignore'))

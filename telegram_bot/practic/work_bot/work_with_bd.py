@@ -307,9 +307,9 @@ def check_user_trainer(id_telegram):
     """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
-    query = {'id_telegram': id_telegram}
-    trainer = collection.find_one(query)
-    if not trainer['trainers']:
+    query = {'id_telegram': str(id_telegram)}
+    user = collection.find_one(query)
+    if not user['trainers']:
         return True
     else:
         return False
