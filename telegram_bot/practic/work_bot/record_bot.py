@@ -109,50 +109,6 @@ async def click_next_in_start_menu(cb: types.CallbackQuery):
     await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, reply_markup=menu_kb,
                                 text="Выберите основные залы")
 
-
-@dp.message_handler()
-# тут еще до вывода тренеров нужно выводить залы для того что бы человек выбрал зал, а потом из этого зала тренеров!!!
-async def send_choice_all_trainers(msg: types.Message):
-    """
-        Функция вывода выбора тренеров
-    """
-    telegram_id = msg.from_user.id
-    if 'записаться' in msg.text.lower():
-        if check_user_trainer(telegram_id):
-            menu_kb = send_gym_for_record(telegram_id)
-            await bot.send_message(chat_id=msg.from_user.id, text='Выберите зал для добавления тренеров',
-                                   reply_markup=menu_kb)
-        # в else надо выводить уже тренеров записанных в бд юзера!!!
-        else:
-            trainers_button = []
-            trainers = send_all_trainers()
-
-            for element in trainers:
-                name = element['name']
-                last_name = element['last_name']
-                tr_id = element['_id']
-                fullname = name + ' ' + last_name
-                button = InlineKeyboardButton(text=fullname, callback_data=f'trainer_{fullname}_{tr_id}')
-                trainers_button.append(button)
-            ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
-            ikb.add(*trainers_button)
-            stack.append(ikb)
-            # print(stack)
-            await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренера', reply_markup=ikb)
-
-
-@dp.callback_query_handler(lambda cb: cb.data.startswith('recordgym'))
-async def add_trainers_to_user(cb: types.CallbackQuery):
-    """
-        Создание меню для добавления тренеров
-    """
-    gym = cb.data.split('_')[1].split(' ')[0]
-    trainers_id = get_id_trainers(gym)
-    menu_kb = create_choice_trainer(trainers_id, gym)
-    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, text='Выберите тренеров',
-                                reply_markup=menu_kb)
-
-
 @dp.callback_query_handler(lambda cb: cb.data.startswith('trainer'))
 async def click_choice_trainer(cb: types.CallbackQuery):
     """
@@ -182,6 +138,49 @@ async def click_choice_trainer(cb: types.CallbackQuery):
                                             reply_markup=keyboard)
     except MessageNotModified:
         pass
+
+@dp.message_handler()
+# тут еще до вывода тренеров нужно выводить залы для того что бы человек выбрал зал, а потом из этого зала тренеров!!!
+async def send_choice_all_trainers(msg: types.Message):
+    """
+        Функция вывода выбора тренеров
+    """
+    telegram_id = msg.from_user.id
+    if 'записаться' in msg.text.lower():
+        if check_user_trainer(telegram_id):
+            menu_kb = send_gym_for_record(telegram_id)
+            await bot.send_message(chat_id=msg.from_user.id, text='Выберите зал для добавления тренеров',
+                                   reply_markup=menu_kb)
+        else:
+            trainers_button = []
+            trainers = send_all_trainers_for_user(telegram_id)
+
+            for element in trainers:
+                name = element['name']
+                last_name = element['last_name']
+                tr_id = element['_id']
+                fullname = name + ' ' + last_name
+                button = InlineKeyboardButton(text=fullname, callback_data=f'tr_{fullname}_{tr_id}')
+                trainers_button.append(button)
+            ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
+            ikb.add(*trainers_button)
+            stack.append(ikb)
+            # print(stack)
+            await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренера', reply_markup=ikb)
+
+
+@dp.callback_query_handler(lambda cb: cb.data.startswith('recordgym'))
+async def add_trainers_to_user(cb: types.CallbackQuery):
+    """
+        Создание меню для добавления тренеров
+    """
+    gym = cb.data.split('_')[1].split(' ')[0]
+    trainers_id = get_id_trainers(gym)
+    menu_kb = create_choice_trainer(trainers_id, gym)
+    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, text='Выберите тренеров',
+                                reply_markup=menu_kb)
+
+
 
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('save_trainer'))
@@ -220,7 +219,7 @@ async def calendar_days_click(cb: types.CallbackQuery):
         await bot.answer_callback_query(callback_query_id=cb.id, text=f'{days_dct[str(day)]}')
 
 
-@dp.callback_query_handler(lambda c: c.data.startswith('trainer_'))
+@dp.callback_query_handler(lambda c: c.data.startswith('tr_'))
 async def calendar_record_trainers(cb: types.CallbackQuery):
     """
         Функция выводит рабочие даты тренера.

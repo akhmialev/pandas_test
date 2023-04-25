@@ -90,6 +90,23 @@ def send_all_trainers():
     trainers = collection.find()
     return trainers
 
+def send_all_trainers_for_user(telegram_id):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    user = collection.find_one(query)
+    trainers = user['trainers']
+
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    all_trainers = []
+    for trainer in trainers:
+        # print(trainer)
+        query = {'_id': trainer['id']}
+        tr = collection.find_one(query)
+        all_trainers.append(tr)
+    return all_trainers
+
 
 def send_trainer_for_query(query):
     """
@@ -328,7 +345,6 @@ def get_id_trainers(gym):
         trainer_id.append(trainer['id'])
     return trainer_id
 
-
 def get_trainers(trainers_id):
     """
         Функция возвращает список имен тренеров
@@ -375,7 +391,6 @@ def delete_trainer_in_user(delete_data, telegram_id):
     collection = db.get_collection('trainers')
     query = {'name': name, 'last_name': last_name}
     trainer = collection.find_one(query)
-    print(trainer['_id'])
 
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}

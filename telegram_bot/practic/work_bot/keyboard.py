@@ -11,8 +11,8 @@ stack = []
 def create_record_del_record_menu():
     kb_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     b1 = KeyboardButton(text='Записаться')
-    b2 = KeyboardButton(text='Удалить запись')
-    b3 = KeyboardButton(text='Изменить зал')
+    b2 = KeyboardButton(text='Удалить запись?')
+    b3 = KeyboardButton(text='Изменить зал?')
     return kb_menu.add(b1).add(b2, b3)
 
 
