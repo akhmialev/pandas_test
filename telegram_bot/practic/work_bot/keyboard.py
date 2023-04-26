@@ -28,7 +28,7 @@ def create_start_menu():
         if gym_title in selected_gyms:
             gym_title = "✅ " + gym_title
         gyms_button.append(InlineKeyboardButton(text=gym_title, callback_data=f'gym_{gym_title}'))
-    gyms_button.append(InlineKeyboardButton(text='Дальше', callback_data=f'next'))
+    gyms_button.append(InlineKeyboardButton(text='Готово', callback_data=f'next'))
     ikb_choice_gym = InlineKeyboardMarkup(row_width=1)
     ikb_choice_gym.add(*gyms_button)
     stack.append(ikb_choice_gym)
@@ -47,7 +47,7 @@ def create_additional_mian_choice_menu(telegram_id):
         if title in selected_type_gyms:
             title = "основной " + ug['id_gym']
         buttons.append(InlineKeyboardButton(text=title, callback_data=f'choice_{title}'))
-    buttons.append(InlineKeyboardButton(text='Дальше', callback_data='next_step'))
+    buttons.append(InlineKeyboardButton(text='Готово', callback_data='next_step'))
     ik_choice_additional_main = InlineKeyboardMarkup(row_width=1)
     ik_choice_additional_main.add(*buttons)
     return ik_choice_additional_main

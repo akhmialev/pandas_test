@@ -255,6 +255,14 @@ def check_user_in_db(user_id):
         return False
     return True
 
+def gyms_none(user_id):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(user_id)}
+    user = collection.find_one(query)
+    if not user['gym']:
+        return True
+    return False
 
 def save_user_choice(telegram_id, choice):
     """
@@ -330,6 +338,7 @@ def check_user_trainer(id_telegram):
         return True
     else:
         return False
+print(check_user_trainer('510329688'))
 
 
 def get_id_trainers(gym):
