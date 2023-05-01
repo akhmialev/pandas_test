@@ -265,6 +265,9 @@ async def past_days(cb: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('day'))
 async def selected_day(cb: types.CallbackQuery):
+    """
+        Функция выводит меню с рабочим временем тренера
+    """
     trainer_id = cb.data.split('_')[-1]
     day = cb.data.split('_')[1]
     menu_kb, text_message = time_menu(trainer_id, day)

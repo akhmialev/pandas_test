@@ -15,6 +15,9 @@ def connect_to_mongodb():
 
 
 def user_in_db(telegram_id):
+    """
+        Функция проверяет есть ли пользователь в базе данных
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -28,9 +31,6 @@ def user_in_db(telegram_id):
 def create_user_in_db(telegram_id, username, first_name):
     """
         Функция для добавления в бд нового пользователя
-    :param telegram_id: телеграм id
-    :param username: username телеграмма
-    :param first_name: fn телеграмма
     """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
@@ -48,6 +48,9 @@ def create_user_in_db(telegram_id, username, first_name):
 
 
 def user_have_gym(telegram_id):
+    """
+        Функция проверяет есть ли у пользователя сохраненные залы
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -59,6 +62,9 @@ def user_have_gym(telegram_id):
 
 
 def trainers_in_user(telegram_id, gym):
+    """
+        Функция проверяет есть ли у пользователя сохраненные тренера
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -81,6 +87,9 @@ def get_gyms():
 
 
 def get_trainers_in_gym(gym):
+    """
+        Функция возвращает всех тренеров конкретного зала
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('gyms')
     query = {'title': str(gym)}
@@ -89,6 +98,9 @@ def get_trainers_in_gym(gym):
 
 
 def get_trainers(trainers_in_gym):
+    """
+        Функция возвращает список тренеров из конкретного зала
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
     trainers = []
@@ -99,6 +111,9 @@ def get_trainers(trainers_in_gym):
 
 
 def get_user_trainers(trainers_id):
+    """
+        Функция возвращает списко словарей с тренерами
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
     trainers = []
@@ -139,6 +154,9 @@ def save_user_choice(telegram_id, choice):
 
 
 def selected_trainers(telegram_id):
+    """
+        Функция возвращает список id выбранных тренеров
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -150,6 +168,9 @@ def selected_trainers(telegram_id):
 
 
 def selected_gyms(telegram_id):
+    """
+        Функция возвращает список id выбранных залов
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -161,6 +182,9 @@ def selected_gyms(telegram_id):
 
 
 def delete_selected_gyms(gym_id, telegram_id):
+    """
+        Функция удаляет id выбранного зала
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -169,6 +193,9 @@ def delete_selected_gyms(gym_id, telegram_id):
 
 
 def add_selected_gyms(gym_id, telegram_id):
+    """
+        Функция добавляет id выбранного зала
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -202,6 +229,9 @@ def delete_selected_trs(telegram_id, gym_id):
 
 
 def delete_selected_trainers(telegram_id, trainer_id):
+    """
+        Функция удаляет id выбранного тренера
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -210,6 +240,9 @@ def delete_selected_trainers(telegram_id, trainer_id):
 
 
 def add_selected_trainers(telegram_id, trainer_id):
+    """
+        Функция добавляет id выбранного тренера
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -218,6 +251,9 @@ def add_selected_trainers(telegram_id, trainer_id):
 
 
 def save_trainer_in_user(data_trainer, telegram_id):
+    """
+        Функция сохраняет запись в тренере
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     trainer_id = data_trainer.split('_')[-1]
@@ -231,6 +267,9 @@ def save_trainer_in_user(data_trainer, telegram_id):
 
 
 def delete_trainer_in_user(data_trainer, telegram_id):
+    """
+        Функция удаляет запись в тренере
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     trainer_id = data_trainer.split('_')[-1]
@@ -244,6 +283,9 @@ def delete_trainer_in_user(data_trainer, telegram_id):
 
 
 def get_trainers_id(telegram_id, gym):
+    """
+        Функция возвращает список id тренеров которые сохранены у пользователя
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -333,6 +375,9 @@ def check_user_click(telegram_id, trainer_id):
 
 
 def save_record_to_trainer(telegram_id, trainer_id, time, day, first_name, username):
+    """
+         Функция сохраняет запись к тренеру
+     """
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
     query = {'_id': ObjectId(str(trainer_id))}
@@ -362,6 +407,9 @@ def save_user_click(telegram_id, trainer_id):
 
 
 def save_record_to_user(telegram_id, trainer_id, time, day, trainer_name, trainer_last_name):
+    """
+        Функция сохраняет запись к пользователю
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
     query = {'id_telegram': str(telegram_id)}
@@ -376,6 +424,9 @@ def save_record_to_user(telegram_id, trainer_id, time, day, trainer_name, traine
 
 
 def get_user_name(trainer_id):
+    """
+        Функция возвращает имя и фамилию тренера
+    """
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
     query = {'_id': ObjectId(str(trainer_id))}
