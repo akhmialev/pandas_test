@@ -195,10 +195,13 @@ async def save_trainer(cb: types.CallbackQuery):
     """
     telegram_id = cb.from_user.id
     gym = cb.data.split('_')[-1]
-    await bot.answer_callback_query(callback_query_id=cb.id)
-    menu_trainers = send_menu_with_trainer(telegram_id, gym)
-    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id,
-                                text='Выбор тренера для записи', reply_markup=menu_trainers)
+    if not selected_trainers(telegram_id):
+        await bot.answer_callback_query(callback_query_id=cb.id, text='Вы не выбрали ни одного тренера')
+    else:
+        await bot.answer_callback_query(callback_query_id=cb.id)
+        menu_trainers = send_menu_with_trainer(telegram_id, gym)
+        await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id,
+                                    text='Выбор тренера для записи', reply_markup=menu_trainers)
 
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('change'))
