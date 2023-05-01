@@ -13,7 +13,8 @@ def create_record_del_record_menu():
     b1 = KeyboardButton(text='Записаться')
     b2 = KeyboardButton(text='Удалить запись?')
     b3 = KeyboardButton(text='Изменить зал?')
-    return kb_menu.add(b1).add(b2, b3)
+    b4 = KeyboardButton(text='Показать мои записи?')
+    return kb_menu.add(b1, b4).add(b2, b3)
 
 
 def create_start_menu():
@@ -85,6 +86,7 @@ def send_gym_for_record(telegram_id):
         else:
             title = f"{gym['id_gym']} дополнительный"
             extra_gyms.append(InlineKeyboardButton(text=title, callback_data=f'recordgym_{title}'))
+    extra_gyms.append(InlineKeyboardButton(text='Настройка залов', callback_data=f'settings'))
     buttons = main_gyms + extra_gyms
     ikb = InlineKeyboardMarkup(row_width=1)
     ikb.add(*buttons)
@@ -150,8 +152,8 @@ def create_calendar_work_schedule(tr_id, week_days, today):
     buttons = []
     for day in data_lst:
         buttons.append(InlineKeyboardButton(text=day, callback_data=f'record_{day}_{tr_id}'))
+    buttons.append(InlineKeyboardButton(text='Назад', callback_data='back'))
     ikb.add(*buttons)
-    ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
     stack.append(ikb)
     return ikb
 

@@ -338,7 +338,6 @@ def check_user_trainer(id_telegram):
         return True
     else:
         return False
-print(check_user_trainer('510329688'))
 
 
 def get_id_trainers(gym):

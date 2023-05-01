@@ -1,5 +1,6 @@
 from aiogram import Bot, Dispatcher, types, executor
 from aiogram.utils.exceptions import MessageNotModified
+from aiogram.dispatcher.filters import Text
 
 from config import TOKEN
 from keyboard import *
@@ -35,10 +36,10 @@ async def menu(msg: types.Message):
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('next_step'))
 async def next_step_menu(cb: types.CallbackQuery):
-    menu_kb = create_record_del_record_menu()
-    await bot.send_message(chat_id=cb.from_user.id, text='Сделайте выбор', reply_markup=menu_kb)
-    await bot.edit_message_text(chat_id=cb.from_user.id, text='Основное меню', message_id=cb.message.message_id,
-                                reply_markup=InlineKeyboardMarkup())
+    telegram_id = cb.from_user.id
+    menu_kb = send_gym_for_record(telegram_id)
+    await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, text='Сделайте выбор',
+                                reply_markup=menu_kb)
 
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('gym_'))
@@ -46,6 +47,7 @@ async def click_start_menu(cb: types.CallbackQuery):
     """
         Обработчик нажатия кнопок в меню для выбора залов
     """
+
     selected_gym = cb.data.split('_')[1]
     telegram_id = cb.from_user.id
     if '✅ ' in cb.data.split('_')[1]:
@@ -141,6 +143,14 @@ async def click_choice_trainer(cb: types.CallbackQuery):
         pass
 
 
+@dp.callback_query_handler(lambda cb: cb.data.startswith('settings'))
+async def settings_gyms(cb: types.CallbackQuery):
+    telegram_id = cb.from_user.id
+    menu_kb = create_additional_mian_choice_menu(telegram_id)
+    await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
+                                        reply_markup=menu_kb)
+
+
 @dp.message_handler()
 # тут еще до вывода тренеров нужно выводить залы для того что бы человек выбрал зал, а потом из этого зала тренеров!!!
 async def send_choice_all_trainers(msg: types.Message):
@@ -148,31 +158,41 @@ async def send_choice_all_trainers(msg: types.Message):
         Функция вывода выбора тренеров
     """
     telegram_id = msg.from_user.id
+    username = msg.from_user.username
+    first_name = msg.from_user.first_name
     if 'записаться' in msg.text.lower():
-        if gyms_none(telegram_id):
+        try:
+            if gyms_none(telegram_id):
+                keyboard = create_start_menu()
+                await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренажерные залы',
+                                       reply_markup=keyboard)
+            else:
+                if check_user_trainer(telegram_id):
+                    menu_kb = send_gym_for_record(telegram_id)
+                    await bot.send_message(chat_id=msg.from_user.id, text='Выберите зал для добавления тренеров',
+                                           reply_markup=menu_kb)
+                else:
+                    trainers_button = []
+                    trainers = send_all_trainers_for_user(telegram_id)
+
+                    for element in trainers:
+                        name = element['name']
+                        last_name = element['last_name']
+                        tr_id = element['_id']
+                        fullname = name + ' ' + last_name
+                        button = InlineKeyboardButton(text=fullname, callback_data=f'tr_{fullname}_{tr_id}')
+                        trainers_button.append(button)
+                    trainers_button.append(InlineKeyboardButton(text='Настроить список привязанных тренеров ',
+                                                                callback_data=f"settings_trainer"))
+                    ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
+                    ikb.add(*trainers_button)
+                    stack.append(ikb)
+                    # print(stack)
+                    await bot.send_message(chat_id=msg.from_user.id, text='Сделайте выбор', reply_markup=ikb)
+        except TypeError:
+            create_user_in_db(telegram_id, username, first_name)
             keyboard = create_start_menu()
             await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренажерные залы', reply_markup=keyboard)
-        else:
-            if check_user_trainer(telegram_id):
-                menu_kb = send_gym_for_record(telegram_id)
-                await bot.send_message(chat_id=msg.from_user.id, text='Выберите зал для добавления тренеров',
-                                       reply_markup=menu_kb)
-            else:
-                trainers_button = []
-                trainers = send_all_trainers_for_user(telegram_id)
-
-                for element in trainers:
-                    name = element['name']
-                    last_name = element['last_name']
-                    tr_id = element['_id']
-                    fullname = name + ' ' + last_name
-                    button = InlineKeyboardButton(text=fullname, callback_data=f'tr_{fullname}_{tr_id}')
-                    trainers_button.append(button)
-                ikb = InlineKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True, row_width=1)
-                ikb.add(*trainers_button)
-                stack.append(ikb)
-                # print(stack)
-                await bot.send_message(chat_id=msg.from_user.id, text='Выберите тренера', reply_markup=ikb)
 
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('recordgym'))
