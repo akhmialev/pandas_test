@@ -112,7 +112,7 @@ def get_trainers(trainers_in_gym):
 
 def get_user_trainers(trainers_id):
     """
-        Функция возвращает списко словарей с тренерами
+        Функция возвращает список словарей с тренерами
     """
     db = connect_to_mongodb()
     collection = db.get_collection('trainers')
