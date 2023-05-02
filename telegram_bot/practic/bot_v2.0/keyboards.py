@@ -13,9 +13,9 @@ def create_start_menu():
     """
     kb_menu = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     b1 = KeyboardButton(text='Записаться')
-    b2 = KeyboardButton(text='Удалить запись?')
-    b4 = KeyboardButton(text='Показать мои записи?')
-    return kb_menu.add(b1).add(b4).add(b2)
+    # b2 = KeyboardButton(text='Удалить запись')
+    b4 = KeyboardButton(text='Показать мои записи')
+    return kb_menu.add(b1).add(b4)
 
 
 def create_first_menu(telegram_id):
@@ -75,6 +75,7 @@ def create_choice_gym(telegram_id):
     buttons = main_gym + extra_gym
     ikb = InlineKeyboardMarkup(row_width=1)
     ikb.add(*buttons)
+    stack.append(ikb)
     return ikb
 
 
@@ -111,10 +112,13 @@ def send_menu_with_trainer(telegram_id, gym):
         name = trainer['name']
         last_name = trainer['last_name']
         full_name = f'{name} {last_name}'
-
         buttons.append(InlineKeyboardButton(text=full_name, callback_data=f'trainer_{full_name}_{tr_id}'))
+
     buttons.append(
         InlineKeyboardButton(text='Изменить привязанных к этому залу тренеров', callback_data=f'change_{gym}'))
+    buttons.append(
+        InlineKeyboardButton(text='Назад', callback_data=f'back'))
+
     ikb = InlineKeyboardMarkup(row_width=1)
     ikb.add(*buttons)
     stack.append(ikb)
@@ -169,10 +173,33 @@ def time_menu(trainer_id, day):
     for hour in range(start, end):
         start_time = f'{hour:02d}:00'
         end_time = f'{hour + 1:02d}:00'
-        button_text = f'{start_time} - {end_time}'
-        buttons.append(InlineKeyboardButton(text=button_text, callback_data=f'finish_{day}_{trainer_id}_{button_text}'))
+        if start_time != check_time(trainer_id, day):
+            button_text = f'{start_time} - {end_time}'
+            buttons.append(
+                InlineKeyboardButton(text=button_text, callback_data=f'finish_{day}_{trainer_id}_{button_text}'))
     ikb = InlineKeyboardMarkup()
     ikb.add(*buttons)
     ikb.add(InlineKeyboardButton(text='Назад', callback_data='back'))
     stack.append(ikb)
     return ikb, text_message
+
+
+def record_menu(telegram_id):
+    records = send_user_record(telegram_id)
+    buttons = []
+    for record in records:
+        trainer_id = record['trainer_id']
+        trainer_name = f"{record['trainer_name']} {record['trainer_last_name']}"
+        if str(trainer_id) in selected_del_record(telegram_id):
+            trainer_name = "✅ " + f"{record['trainer_name']} {record['trainer_last_name']}"
+        time = str(record['time'])
+        date = record['date']
+        buttons.append(
+            InlineKeyboardButton(text=f'{trainer_name} {date} с {time.split("-")[0]} до {time.split("-")[1]}',
+                                 callback_data=f't_del_{trainer_id}'))
+
+    ikb = InlineKeyboardMarkup(row_width=1)
+    ikb.add(*buttons)
+    ikb.add(InlineKeyboardButton(text='УДАЛИТЬ ЗАПИСЬ', callback_data=f'delete_'))
+    ikb.add(InlineKeyboardButton(text='Назад', callback_data='_back'))
+    return ikb
