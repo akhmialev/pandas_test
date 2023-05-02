@@ -235,7 +235,6 @@ async def trainer_time_output(cb: types.CallbackQuery):
         Функция для вывода полного дня неделе если пользователь нажмет на календаре
     """
     day = cb.data.split('_')[2]
-    print(day)
     days = {
         'пн': 'Понедельник',
         'вт': 'Вторник',
@@ -305,14 +304,15 @@ async def record_to_trainer(cb: types.CallbackQuery):
         await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
                                             reply_markup=InlineKeyboardMarkup())
     else:
-        await bot.answer_callback_query(callback_query_id=cb.id)
-        await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, text=text_message,
-                                    reply_markup=InlineKeyboardMarkup())
-        await bot.send_message(chat_id=cb.from_user.id, text='Стартовое меню', reply_markup=menu_st)
-
         save_record_to_trainer(telegram_id, trainer_id, time, day, first_name, username)
         save_record_to_user(telegram_id, trainer_id, time, day, trainer_name, trainer_last_name)
         save_user_click(telegram_id, trainer_id)
+
+        await bot.answer_callback_query(callback_query_id=cb.id)
+        await bot.send_message(chat_id=cb.from_user.id, text='Стартовое меню', reply_markup=menu_st)
+
+        await bot.edit_message_text(chat_id=cb.from_user.id, message_id=cb.message.message_id, text=text_message,
+                                    reply_markup=InlineKeyboardMarkup())
 
 
 @dp.callback_query_handler(lambda c: c.data.startswith('back'))
@@ -326,6 +326,61 @@ async def button_back(cb: types.CallbackQuery):
         await bot.answer_callback_query(callback_query_id=cb.id)
         await bot.edit_message_text(chat_id=cb.from_user.id, reply_markup=kb, message_id=cb.message.message_id,
                                     text='Вы вернулись в назад')
+
+
+@dp.message_handler(Text(equals='Показать мои записи'))
+async def user_records(msg: types.Message):
+    # надо добавить проверку что если нет записей то вывести ответ что у вас нет еще записей
+    telegram_id = msg.from_user.id
+    records = send_user_record(telegram_id)
+    menu_st = create_start_menu()
+    for record in records:
+        trainer_name = f"{record['trainer_name']} {record['trainer_last_name']}"
+        time = str(record['time'])
+        date = record['date']
+        await bot.send_message(chat_id=msg.from_user.id,
+                               text=f'Вы записаны к {trainer_name} {date}'
+                                    f' с {time.split("-")[0]} до {time.split("-")[1]}')
+    await bot.send_message(chat_id=msg.from_user.id, text='Стартовое меню', reply_markup=menu_st)
+
+
+@dp.message_handler(Text(equals='Удалить запись'))
+async def delete_record(msg: types.Message):
+    telegram_id = msg.from_user.id
+    menu_record = record_menu(telegram_id)
+    await bot.send_message(chat_id=msg.from_user.id, text='Выберите запись для удаления', reply_markup=menu_record)
+
+
+@dp.callback_query_handler(lambda cb: cb.data.startswith('_'))
+async def button_back_in_delete_menu(cb: types.CallbackQuery):
+    menu_st = create_start_menu()
+    await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
+                                        reply_markup=InlineKeyboardMarkup())
+    await bot.send_message(chat_id=cb.from_user.id, text='Стартовое меню', reply_markup=menu_st)
+    await bot.delete_message(chat_id=cb.from_user.id, message_id=cb.message.message_id)
+
+
+@dp.callback_query_handler(lambda cb: cb.data.startswith('t_del'))
+async def delete_records(cb: types.CallbackQuery):
+    trainer_id = cb.data.split('_')[-1]
+    telegram_id = cb.from_user.id
+    if str(trainer_id) in selected_trainers(telegram_id):
+        await bot.send_message(chat_id=cb.from_user.id, text='hi')
+        delete_selected_records(telegram_id, trainer_id)
+    else:
+        await bot.send_message(chat_id=cb.from_user.id, text='no')
+        add_selected_records(telegram_id, trainer_id)
+    keyboard = record_menu(telegram_id)
+    try:
+        await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
+                                            reply_markup=keyboard)
+    except MessageNotModified:
+        pass
+
+
+@dp.callback_query_handler(lambda cb: cb.data.startswith('delete_'))
+async def delete_records(cb: types.CallbackQuery):
+    await bot.send_message(chat_id=cb.from_user.id, text='hi')
 
 
 if __name__ == '__main__':

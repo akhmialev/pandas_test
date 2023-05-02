@@ -42,7 +42,8 @@ def create_user_in_db(telegram_id, username, first_name):
         'records': [],
         'selected_gyms': [],
         'selected_type_gyms': [],
-        'selected_trainers': []
+        'selected_trainers': [],
+        'selected_del_record': []
     }
     collection.insert_one(data)
 
@@ -360,6 +361,16 @@ def get_trainer_work_time(trainer_id, day):
             return str(tr['time']), trainer_name, trainer_last_name
 
 
+def check_time(trainer_id, day):
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    query = {'_id': ObjectId(str(trainer_id))}
+    trainer = collection.find_one(query)
+    for record in trainer['records']:
+        if str(day) == (record['date']):
+            time = record['time'][:5]
+            return time
+
 def check_user_click(telegram_id, trainer_id):
     """
         Функция проверяет запись в бд (пользователь может записаться к тренерам 1 раз в день)
@@ -369,7 +380,7 @@ def check_user_click(telegram_id, trainer_id):
     query = {'telegram_id': str(telegram_id)}
     user = collection.find_one(query)
     if user:
-        if trainer_id in user['trainer_id'] and user['date'] == str(datetime.datetime.now().date()):
+        if str(trainer_id) in user['trainer_id'] and user['date'] == str(datetime.datetime.now().date()):
             return True
     return False
 
@@ -400,10 +411,14 @@ def save_user_click(telegram_id, trainer_id):
     db = connect_to_mongodb()
     collection = db.get_collection('users_check_click')
     update_query = {'$addToSet': {'trainer_id': trainer_id}}
-    collection.update_one({
-        'telegram_id': str(telegram_id),
-        'date': str(datetime.datetime.now().date())
-    }, update_query, upsert=True)
+    query = {'telegram_id': str(telegram_id)}
+    user = collection.find_one(query)
+    if user:
+        collection.update_one(filter=query, update=update_query, upsert=True)
+    else:
+        collection.insert_one({'telegram_id': str(telegram_id),
+                               'trainer_id': [trainer_id],
+                               'date': str(datetime.datetime.now().date())})
 
 
 def save_record_to_user(telegram_id, trainer_id, time, day, trainer_name, trainer_last_name):
@@ -432,3 +447,51 @@ def get_user_name(trainer_id):
     query = {'_id': ObjectId(str(trainer_id))}
     trainer = collection.find_one(query)
     return trainer['name'], trainer['last_name']
+
+
+def send_user_record(telegram_id):
+    """
+        Функция возвращает записи пользователя
+    """
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    user = collection.find_one(query)
+    return user['records']
+
+
+def selected_del_record(telegram_id):
+    """
+        Функция возвращает список с id тренеров
+    """
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    user = collection.find_one(query)
+    trainers_id = []
+    for trainer in user['selected_del_record']:
+        if trainer['id']:
+            trainers_id.append(trainer['id'])
+    return trainers_id
+
+
+def delete_selected_records(telegram_id, trainer_id):
+    """
+        Функция удаляет id выбранной записи для удаления
+    """
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id-telegram': str(telegram_id)}
+    update = {'$pull': {'selected_del_record': {'id': trainer_id}}}
+    collection.update_one(query, update=update)
+
+
+def add_selected_records(telegram_id, trainer_id):
+    """
+        Функция добавляет id выбранной записи для удаления
+    """
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    add = {'$addToSet': {'selected_del_record': {'id': trainer_id}}}
+    collection.update_one(query, add)
