@@ -2,7 +2,6 @@ import locale
 
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from bd import *
-from tools import *
 
 stack = []
 
@@ -65,7 +64,6 @@ def create_choice_gym(telegram_id):
         title = f"[{gym['status_gym']}] {gym['gym']}"
         buttons.append(InlineKeyboardButton(text=title, callback_data=f'ch_gym_{title}'))
     buttons.append(InlineKeyboardButton(text='Изменить привязанные залы', callback_data=f'cho_gym'))
-    buttons.append(InlineKeyboardButton(text='Изменить статус залов', callback_data=f'status'))
     ikb = InlineKeyboardMarkup(row_width=1)
     ikb.add(*buttons)
     stack.append(ikb)

@@ -110,7 +110,8 @@ async def next_step_menu(cb: types.CallbackQuery):
         Функция для вывода для создания меню,
         когда пользователь выбрал основные/дополнительные залы, выводит стартовое меню
     """
-    menu_kb = create_start_menu()
+    telegram_id = cb.from_user.id
+    menu_kb = create_choice_gym(telegram_id)
     await bot.answer_callback_query(callback_query_id=cb.id)
     await bot.send_message(chat_id=cb.from_user.id, reply_markup=menu_kb, text='Стартовое меню')
     await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
@@ -303,7 +304,7 @@ async def record_to_trainer(cb: types.CallbackQuery):
 
     if check_user_click(telegram_id, trainer_id):
         await bot.answer_callback_query(callback_query_id=cb.id)
-        await bot.send_message(chat_id=cb.from_user.id, text=f'Вы уже записаны к {trainer_name} {trainer_last_name}')
+        await bot.send_message(chat_id=cb.from_user.id, text=f'Вы уже записаны к {trainer_name} {trainer_last_name} ')
         await bot.send_message(chat_id=cb.from_user.id, text='Стартовое меню', reply_markup=menu_st)
         await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
                                             reply_markup=InlineKeyboardMarkup())
