@@ -59,12 +59,17 @@ def create_choice_gym(telegram_id):
        Функция для создания отображения основных и дополнительных залов
     """
     gyms = get_user_gyms(telegram_id)
-    buttons = []
+    main = []
+    extra = []
     for gym in gyms:
         title = f"[{gym['status_gym']}] {gym['gym']}"
-        buttons.append(InlineKeyboardButton(text=title, callback_data=f'ch_gym_{title}'))
-    buttons.append(InlineKeyboardButton(text='Изменить привязанные залы', callback_data=f'cho_gym'))
+        if gym['status_gym'] == 'основной':
+            main.append(InlineKeyboardButton(text=title, callback_data=f'ch_gym_{title}'))
+        else:
+            extra.append(InlineKeyboardButton(text=title, callback_data=f'ch_gym_{title}'))
+    extra.append(InlineKeyboardButton(text='Изменить привязанные залы', callback_data=f'cho_gym'))
     ikb = InlineKeyboardMarkup(row_width=1)
+    buttons = main + extra
     ikb.add(*buttons)
     stack.append(ikb)
     return ikb

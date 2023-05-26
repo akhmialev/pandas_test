@@ -42,6 +42,8 @@ def create_user_in_db(telegram_id, username, first_name):
         "gyms": [],
         'records': [],
         'person': {
+            'email': '',
+            'password': '',
             'name': '',
             'secondname': '',
             'phone': '',
@@ -198,6 +200,7 @@ def overwrite_main_status(telegram_id, gym):
         if g['gym'] == gym:
             g['status_gym'] = 'основной'
             collection.update_one(query, {'$set': {'gyms': user['gyms']}})
+
 
 def overwrite_extra_status(telegram_id, gym):
     db = connect_to_mongodb()
@@ -525,3 +528,25 @@ def add_selected_records(telegram_id, trainer_id):
     query = {'id_telegram': str(telegram_id)}
     add = {'$addToSet': {'selected_del_record': {'id': trainer_id}}}
     collection.update_one(query, add)
+
+
+def bind_user(telegram_id, crm_id):
+    """
+        Функция добавляет данные в тг юзера
+    """
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    tg_user = collection.find_one(query)
+    crm_user = collection.find_one({'_id': ObjectId(crm_id)})
+    if crm_user and tg_user:
+        person_data = crm_user['person']
+        update = {'$set': {'person': person_data}}
+        collection.update_one(query, update)
+        collection.update_one(query, {'$set': {'crm_id': str(crm_id)}})
+        collection.delete_one({'_id': ObjectId(crm_id)})
+        return True
+    else:
+        return False
+
+

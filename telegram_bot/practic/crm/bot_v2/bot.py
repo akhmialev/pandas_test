@@ -351,9 +351,39 @@ async def user_records(msg: types.Message):
 
 @dp.message_handler(Text(equals='Удалить запись'))
 async def delete_record(msg: types.Message):
+    """
+        Функция для удаления записи
+    """
     telegram_id = msg.from_user.id
     menu_record = record_menu(telegram_id)
     await bot.send_message(chat_id=msg.from_user.id, text='Выберите запись для удаления', reply_markup=menu_record)
+
+
+@dp.message_handler(commands=['привязать', 'cancel'])
+async def process_message(msg: types.Message):
+    """
+        Функция для меню которое привязывает к тг юзеру crm юзера
+    """
+    if msg.text == '/привязать':
+        await msg.reply('Введите ваш ID:')
+    elif msg.text == '/cancel':
+        await msg.reply('Привязка отменена')
+    else:
+        await msg.reply('Неизвестная команда')
+
+
+@dp.message_handler()
+async def bind_id(msg: types.Message):
+    """
+        Функция для меню для привязки юзера и вывода ответа
+    """
+    telegram_id = msg.from_user.id
+    if len(msg.text) == 24:
+        crm_id = msg.text
+        if bind_user(telegram_id, crm_id):
+            await bot.send_message(chat_id=msg.from_user.id, text='Вы успешно привязали ID')
+        else:
+            await bot.send_message(chat_id=msg.from_user.id, text='Ошибка, неправильный ID')
 
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('_'))
