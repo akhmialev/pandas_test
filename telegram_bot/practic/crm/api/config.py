@@ -7,4 +7,3 @@ port = 27017
 username = 'artem'
 password = '=AR94!#mfz3p'
 URL_FOR_CONNECT_TO_DB = f'mongodb://{username}:{password}@{host}:{port}/'
-
