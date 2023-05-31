@@ -1,8 +1,8 @@
-from aiogram import Bot, Dispatcher, types, executor
+from aiogram import Bot, Dispatcher, types
 from aiogram.utils.exceptions import MessageNotModified
 from aiogram.dispatcher.filters import Text
 
-from keyboards import *
+from bot_v2.keyboards import *
 from config import TOKEN
 
 bot = Bot(token=TOKEN)
@@ -418,5 +418,4 @@ async def delete_records(cb: types.CallbackQuery):
     await bot.send_message(chat_id=cb.from_user.id, text='hi')
 
 
-if __name__ == '__main__':
-    executor.start_polling(dp, on_startup=on_startup, skip_updates=True)
+
