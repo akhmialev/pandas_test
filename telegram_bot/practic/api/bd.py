@@ -214,3 +214,57 @@ def delete_trainer_in_db(id_user, id_gym, id_trainer):
 
     except Exception as e:
         return f'{e}'
+
+
+def send_data(id_trainer):
+    try:
+        db = connect_to_mongodb()
+        collection = db.get_collection('trainers')
+        query = {'_id': ObjectId(id_trainer)}
+
+        trainer = collection.find_one(query)
+
+        date = []
+        for d in trainer['working_schedule']['work_days']:
+            date.append(d['date'])
+        return date
+
+    except Exception as e:
+        return f'{e}'
+
+
+def send_time(id_trainer, date):
+    try:
+        db = connect_to_mongodb()
+        collection = db.get_collection('trainers')
+        query = {'_id': ObjectId(id_trainer)}
+
+        trainer = collection.find_one(query)
+        time = []
+        for tr_date in trainer['working_schedule']['work_days']:
+            if date == tr_date['date']:
+                time.append(tr_date['time'])
+        return time
+
+    except Exception as e:
+        return f'{e}'
+
+
+def check_record_time(id_trainer, date):
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    query = {'_id': ObjectId(id_trainer)}
+
+    time = []
+    trainer = collection.find_one(query)
+    for i in trainer['records']:
+        if date == i['date']:
+            time.append(i['time'][:2])
+
+    return time
+
+def record_in_db(id_trainer, date, time):
+    ...
+
+
+

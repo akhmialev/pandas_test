@@ -7,6 +7,7 @@ from bot_v2.bot import dp, on_startup
 from users_api import *
 from gyms_api import *
 from trainer_api import *
+from record_api import *
 
 app = FastAPI()
 
@@ -164,6 +165,30 @@ async def delete_trainer(id_user, id_gym, id_trainer):
     id_trainer - ID тренера
     """
     return trainer_delete(id_user, id_gym, id_trainer)
+
+
+@app.post('/api/records_date', tags=['Record'])
+async def record_date(id_trainer):
+    """
+    ## Выводит рабочие дни тренера.<br>
+    id_trainer - ID тренера
+    """
+    return date_record(id_trainer)
+
+
+@app.post('/api/records_time', tags=['Record'])
+async def record_time(id_trainer, date):
+    """
+    ## Выводит время для записи к тренеру(если время занято его не будет).<br>
+    id_trainer - ID тренера<br>
+    date - Дата в формате (10.06 , 11.07 и т.п.)
+    """
+    return time_record(id_trainer, date)
+
+
+@app.post('/api/record_finish', tags=['Record'])
+async def record_finish(id_trainer, date, time):
+    return finish_record(id_trainer, date, time)
 
 
 if __name__ == '__main__':
