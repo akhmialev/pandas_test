@@ -82,18 +82,18 @@ def send_gyms():
     return g
 
 
-def send_user_gym(id):
+def send_user_gym(user_id):
     db = connect_to_mongodb()
     collection = db.get_collection('users')
-    query = {'_id': ObjectId(id)}
+    query = {'_id': ObjectId(user_id)}
     user = collection.find_one(query)
     return user['gyms']
 
 
-def send_trainers_in_gym(id):
+def send_trainers_in_gym(id_gym):
     db = connect_to_mongodb()
     collection = db.get_collection('gyms')
-    query = {'_id': ObjectId(id)}
+    query = {'_id': ObjectId(id_gym)}
     gym = collection.find_one(query)
     trainers = []
     for trainer in gym['trainers']:
@@ -114,19 +114,19 @@ def send_bind_trainers(user_id, gym_id):
     gym = collection.find_one(query)
     gym_title = gym['title']
 
-    tr_id = []
+    tr_ids = []
     collection = db.get_collection('users')
     query = {'_id': ObjectId(user_id)}
     user = collection.find_one(query)
     for gym in user['gyms']:
         if gym_title == gym['gym']:
             for tr_tile in gym['id_trainers']:
-                tr_id.append(tr_tile['id'])
+                tr_ids.append(tr_tile['id'])
 
     tr_name = []
     collection = db.get_collection('trainers')
-    for id in tr_id:
-        query = {'_id': ObjectId(id)}
+    for tr_id in tr_ids:
+        query = {'_id': ObjectId(tr_id)}
         trainer_name = collection.find_one(query)
         tr_name.append(f"{trainer_name['name']} {trainer_name['last_name']}")
     return tr_name
@@ -141,12 +141,12 @@ def add_gyms_db(id_user, id_gym):
 
     collection = db.get_collection('users')
     query = {'_id': ObjectId(id_user)}
-    update = {'$addToSet': {'gyms': {'gym': gym_title,
-                                     'status_gym': 'дополнительный',
-                                     'id_trainers': []}}}
-    collection.update_one(query, update)
-    update = {'$addToSet': {'selected_gyms': {'id': id_gym}}}
-    collection.update_one(query, update)
+    updating = {'$addToSet': {'gyms': {'gym': gym_title,
+                                       'status_gym': 'дополнительный',
+                                       'id_trainers': []}}}
+    collection.update_one(query, updating)
+    updating = {'$addToSet': {'selected_gyms': {'id': id_gym}}}
+    collection.update_one(query, updating)
     return gym_title
 
 
@@ -173,3 +173,44 @@ def delete_gym_in_db(id_user, id_gym):
         return f'{e}'
 
 
+def add_trainer_in_db(id_user, id_gym, id_trainer):
+    try:
+        db = connect_to_mongodb()
+        collection = db.get_collection('gyms')
+        gym = collection.find_one({'_id': ObjectId(id_gym)})
+        gym_title = gym['title']
+
+        collection = db.get_collection('users')
+        query = {'_id': ObjectId(id_user)}
+
+        add = {'$addToSet': {'selected_trainers': {'id': id_trainer}}}
+        collection.update_one(query, add)
+
+        updating = {'$addToSet': {'gyms.$.id_trainers': {'id': id_trainer}}}
+        query = {'gyms.gym': gym_title}
+        collection.update_one(query, updating)
+        return 'success'
+
+    except Exception as e:
+        return f'{e}'
+
+
+def delete_trainer_in_db(id_user, id_gym, id_trainer):
+    try:
+        db = connect_to_mongodb()
+        collection = db.get_collection('gyms')
+        gym = collection.find_one({'_id': ObjectId(id_gym)})
+        gym_title = gym['title']
+
+        collection = db.get_collection('users')
+        query = {'_id': ObjectId(id_user)}
+        delete = {'$pull': {'selected_trainers': {'id': id_trainer}}}
+        collection.update_one(query, delete)
+
+        query = {'gyms.gym': gym_title}
+        delete = {'$pull': {'gyms.$.id_trainers': {'id': id_trainer}}}
+        collection.update_one(query, delete)
+        return 'success'
+
+    except Exception as e:
+        return f'{e}'

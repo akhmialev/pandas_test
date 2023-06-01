@@ -16,19 +16,9 @@ def gyms():
     return data
 
 
-def user_gym(id):
-    user_gym_in_db = send_user_gym(id)
+def user_gym(user_id):
+    user_gym_in_db = send_user_gym(user_id)
     return {'users_gyms': user_gym_in_db}
-
-
-def trainers_in_gym(id):
-    trainers_in_gym_in_db = send_trainers_in_gym(id)
-    return {'trainers_name': trainers_in_gym_in_db}
-
-
-def bind_trainers(user_id, gym_id):
-    trainers_bind = send_bind_trainers(user_id, gym_id)
-    return {'trainer_name': trainers_bind}
 
 
 def add_gym_for_user(id_user, id_gym):

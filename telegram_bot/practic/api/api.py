@@ -6,11 +6,12 @@ from fastapi.responses import RedirectResponse
 from bot_v2.bot import dp, on_startup
 from users_api import *
 from gyms_api import *
+from trainer_api import *
 
 app = FastAPI()
 
 
-@app.post('/api/user/register', tags=['User'])
+@app.post('/api/user/register', tags=['Register'])
 def register(email: str, password: str, name=None, secondname=None, phone=None, age=None):
     """
         ## Регистрация пользователей
@@ -27,7 +28,7 @@ def register(email: str, password: str, name=None, secondname=None, phone=None, 
     return add_user(email, password, name, secondname, phone, age)
 
 
-@app.post('/api/login', tags=['Other'])
+@app.post('/api/login', tags=['Register'])
 def login(email: str, password: str):
     """
      ## Логин
@@ -43,7 +44,7 @@ def login(email: str, password: str):
         )
 
 
-@app.post("/auth", tags=['Other'])
+@app.post("/auth", tags=['Register'])
 def auth():
     return {"message": "Аутентификация успешна"}
 
@@ -65,20 +66,7 @@ async def return_user(user_id: str):
     return get_user(user_id)
 
 
-# @app.post('/api/user/add', tags=['User'])
-# async def user_add(name: str, secondname: str, phone: int, age: int):
-#     """
-#     ## Добавляет пользователя
-#     -name: Имя <br>
-#     -secondname: Фамилия <br>
-#     -phone: телефон <br>
-#     -type: тип <br>
-#     -age: возраст
-#     """
-#     return add_user(name, secondname, phone, age)
-
-
-@app.post('/api/user/delete', tags=['User'])
+@app.delete('/api/user/delete', tags=['User'])
 async def delete_user(user_id: str):
     """
     ## Удаляет пользователя
@@ -87,7 +75,7 @@ async def delete_user(user_id: str):
     return delete(user_id)
 
 
-@app.post('/api/user/update', tags=['User'])
+@app.put('/api/user/update', tags=['User'])
 async def update_user(user_id: str, name: str, secondname: str, phone: int, age: int):
     """
     ## Обновляет пользователя
@@ -100,7 +88,7 @@ async def update_user(user_id: str, name: str, secondname: str, phone: int, age:
     return user_update(user_id, name, secondname, phone, age)
 
 
-@app.get('/api/gyms/', tags=['gyms'])
+@app.get('/api/gyms/', tags=['Gym'])
 async def get_gyms():
     """
     ## Выводит все залы
@@ -108,25 +96,25 @@ async def get_gyms():
     return gyms()
 
 
-@app.post('/api/user_gyms/')
-async def get_user_gym(id):
+@app.post('/api/user_gyms/', tags=['Gym'])
+async def get_user_gym(user_id):
     """
     ## Выводит привязанные залы пользователя по ID.<br>
     id: ID пользователя
     """
-    return user_gym(id)
+    return user_gym(user_id)
 
 
-@app.post('/api/trainers_in_gym/')
-async def get_trainers_in_gyms(id):
+@app.post('/api/trainers_in_gym/', tags=['Trainer'])
+async def get_trainers_in_gyms(id_gym):
     """
     ## Выводит тренеров конкретного зала по ID.<br>
     id - ID зала
     """
-    return trainers_in_gym(id)
+    return trainers_in_gym(id_gym)
 
 
-@app.post('/api/user_trainers/')
+@app.post('/api/user_trainers/', tags=['Trainer'])
 async def get_bind_trainers(user_id, gym_id):
     """
     ## Выводит тренеров привязанных тренеров конкретного зала пользователя.<br>
@@ -136,7 +124,7 @@ async def get_bind_trainers(user_id, gym_id):
     return bind_trainers(user_id, gym_id)
 
 
-@app.post('/api/add_gym/')
+@app.post('/api/add_gym/', tags=['Gym'])
 async def add_gym(id_user, id_gym):
     """
     ## Добавление зала пользователю.<br>
@@ -146,7 +134,7 @@ async def add_gym(id_user, id_gym):
     return add_gym_for_user(id_user, id_gym)
 
 
-@app.post('/api/delete_gym')
+@app.delete('/api/delete_gym', tags=['Gym'])
 async def delete_gym(id_user, id_gym):
     """
     ## Удаляет привязанный зал у пользователя.<br>
@@ -154,6 +142,28 @@ async def delete_gym(id_user, id_gym):
     id_gym - ID зала
     """
     return gym_delete(id_user, id_gym)
+
+
+@app.post('/api/add_trainer', tags=['Trainer'])
+async def add_trainer(id_user, id_gym, id_trainer):
+    """
+    ## Добавляет тренера к пользователю.<br>
+    id_user - ID пользователя <br>
+    id_gym - ID зала <br>
+    id_trainer - ID тренера
+    """
+    return add_trainer_for_user(id_user, id_gym, id_trainer)
+
+
+@app.delete('/api/delete_trainer', tags=['Trainer'])
+async def delete_trainer(id_user, id_gym, id_trainer):
+    """
+    ## Удаляет тренера у пользователю.<br>
+    id_user - ID пользователя <br>
+    id_gym - ID зала <br>
+    id_trainer - ID тренера
+    """
+    return trainer_delete(id_user, id_gym, id_trainer)
 
 
 if __name__ == '__main__':
