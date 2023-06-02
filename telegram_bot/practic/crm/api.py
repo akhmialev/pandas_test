@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException, status
-from aiogram import executor
 import uvicorn
 from fastapi.responses import RedirectResponse
+from aiogram import executor
 
-from bot_v2.bot import dp, on_startup
+from ..bot_v2.bot import dp, on_startup
 from users_api import *
 from gyms_api import *
 from trainer_api import *
@@ -12,7 +12,7 @@ from record_api import *
 app = FastAPI()
 
 
-@app.post('/api/user/register', tags=['Register'])
+@app.post('/crm/user/register', tags=['Register'])
 def register(email: str, password: str, name=None, secondname=None, phone=None, age=None):
     """
         ## Регистрация пользователей
@@ -29,7 +29,7 @@ def register(email: str, password: str, name=None, secondname=None, phone=None, 
     return add_user(email, password, name, secondname, phone, age)
 
 
-@app.post('/api/login', tags=['Register'])
+@app.post('/crm/login', tags=['Register'])
 def login(email: str, password: str):
     """
      ## Логин
@@ -50,7 +50,7 @@ def auth():
     return {"message": "Аутентификация успешна"}
 
 
-@app.get('/api/users/', tags=['User'])
+@app.get('/crm/users/', tags=['User'])
 async def return_users():
     """
     ## Возвращает всех пользователей
@@ -58,7 +58,7 @@ async def return_users():
     return get_users()
 
 
-@app.get('/api/user/{user_id}', tags=['User'])
+@app.get('/crm/user/{user_id}', tags=['User'])
 async def return_user(user_id: str):
     """
     ## Возвращает пользователя по id.
@@ -67,7 +67,7 @@ async def return_user(user_id: str):
     return get_user(user_id)
 
 
-@app.delete('/api/user/delete', tags=['User'])
+@app.delete('/crm/user/delete', tags=['User'])
 async def delete_user(user_id: str):
     """
     ## Удаляет пользователя
@@ -76,7 +76,7 @@ async def delete_user(user_id: str):
     return delete(user_id)
 
 
-@app.put('/api/user/update', tags=['User'])
+@app.put('/crm/user/update', tags=['User'])
 async def update_user(user_id: str, name: str, secondname: str, phone: int, age: int):
     """
     ## Обновляет пользователя
@@ -89,7 +89,7 @@ async def update_user(user_id: str, name: str, secondname: str, phone: int, age:
     return user_update(user_id, name, secondname, phone, age)
 
 
-@app.get('/api/gyms/', tags=['Gym'])
+@app.get('/crm/gyms/', tags=['Gym'])
 async def get_gyms():
     """
     ## Выводит все залы
@@ -97,7 +97,7 @@ async def get_gyms():
     return gyms()
 
 
-@app.post('/api/user_gyms/', tags=['Gym'])
+@app.post('/crm/user_gyms/', tags=['Gym'])
 async def get_user_gym(user_id):
     """
     ## Выводит привязанные залы пользователя по ID.<br>
@@ -106,7 +106,7 @@ async def get_user_gym(user_id):
     return user_gym(user_id)
 
 
-@app.post('/api/trainers_in_gym/', tags=['Trainer'])
+@app.post('/crm/trainers_in_gym/', tags=['Trainer'])
 async def get_trainers_in_gyms(id_gym):
     """
     ## Выводит тренеров конкретного зала по ID.<br>
@@ -115,7 +115,7 @@ async def get_trainers_in_gyms(id_gym):
     return trainers_in_gym(id_gym)
 
 
-@app.post('/api/user_trainers/', tags=['Trainer'])
+@app.post('/crm/user_trainers/', tags=['Trainer'])
 async def get_bind_trainers(user_id, gym_id):
     """
     ## Выводит тренеров привязанных тренеров конкретного зала пользователя.<br>
@@ -125,7 +125,7 @@ async def get_bind_trainers(user_id, gym_id):
     return bind_trainers(user_id, gym_id)
 
 
-@app.post('/api/add_gym/', tags=['Gym'])
+@app.post('/crm/add_gym/', tags=['Gym'])
 async def add_gym(id_user, id_gym):
     """
     ## Добавление зала пользователю.<br>
@@ -135,7 +135,7 @@ async def add_gym(id_user, id_gym):
     return add_gym_for_user(id_user, id_gym)
 
 
-@app.delete('/api/delete_gym', tags=['Gym'])
+@app.delete('/crm/delete_gym', tags=['Gym'])
 async def delete_gym(id_user, id_gym):
     """
     ## Удаляет привязанный зал у пользователя.<br>
@@ -145,7 +145,7 @@ async def delete_gym(id_user, id_gym):
     return gym_delete(id_user, id_gym)
 
 
-@app.post('/api/add_trainer', tags=['Trainer'])
+@app.post('/crm/add_trainer', tags=['Trainer'])
 async def add_trainer(id_user, id_gym, id_trainer):
     """
     ## Добавляет тренера к пользователю.<br>
@@ -156,7 +156,7 @@ async def add_trainer(id_user, id_gym, id_trainer):
     return add_trainer_for_user(id_user, id_gym, id_trainer)
 
 
-@app.delete('/api/delete_trainer', tags=['Trainer'])
+@app.delete('/crm/delete_trainer', tags=['Trainer'])
 async def delete_trainer(id_user, id_gym, id_trainer):
     """
     ## Удаляет тренера у пользователю.<br>
@@ -167,8 +167,8 @@ async def delete_trainer(id_user, id_gym, id_trainer):
     return trainer_delete(id_user, id_gym, id_trainer)
 
 
-@app.post('/api/records_date', tags=['Record'])
-async def record_date(id_trainer):
+@app.post('/crm/choice_date', tags=['Record'])
+async def choice_date(id_trainer):
     """
     ## Выводит рабочие дни тренера.<br>
     id_trainer - ID тренера
@@ -176,8 +176,8 @@ async def record_date(id_trainer):
     return date_record(id_trainer)
 
 
-@app.post('/api/records_time', tags=['Record'])
-async def record_time(id_trainer, date):
+@app.post('/crm/choice_time', tags=['Record'])
+async def choice_time(id_trainer, date):
     """
     ## Выводит время для записи к тренеру(если время занято его не будет).<br>
     id_trainer - ID тренера<br>
@@ -186,11 +186,18 @@ async def record_time(id_trainer, date):
     return time_record(id_trainer, date)
 
 
-@app.post('/api/record_finish', tags=['Record'])
+@app.post('/crm/record_finish', tags=['Record'])
 async def record_finish(id_user, id_trainer, date, time):
+    """
+    ## Записывает к тренеру.<br>
+    id_user - ID пользователя <br>
+    id_trainer - ID тренера <br>
+    date - выбранный день записи <br>
+    time - выбранное время записи в формате(10:00-11:00)
+    """
     return finish_record(id_user, id_trainer, date, time)
 
 
 if __name__ == '__main__':
-    uvicorn.run(app, port=8080)
     executor.start_polling(dp, on_startup=on_startup, skip_updates=True)
+    uvicorn.run(app, port=8080)

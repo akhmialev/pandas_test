@@ -1,4 +1,4 @@
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, executor
 from aiogram.utils.exceptions import MessageNotModified
 from aiogram.dispatcher.filters import Text
 

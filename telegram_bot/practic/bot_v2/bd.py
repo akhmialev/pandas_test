@@ -415,7 +415,7 @@ def check_user_click(telegram_id, trainer_id):
     if user:
         if str(trainer_id) in user['trainer_id'] and user['date'] == str(datetime.datetime.now().date()):
             return True
-    return False
+        return False
 
 
 def save_record_to_trainer(telegram_id, trainer_id, time, day, first_name, username):
@@ -548,5 +548,3 @@ def bind_user(telegram_id, crm_id):
         return True
     else:
         return False
-
-
