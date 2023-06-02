@@ -187,8 +187,8 @@ async def record_time(id_trainer, date):
 
 
 @app.post('/api/record_finish', tags=['Record'])
-async def record_finish(id_trainer, date, time):
-    return finish_record(id_trainer, date, time)
+async def record_finish(id_user, id_trainer, date, time):
+    return finish_record(id_user, id_trainer, date, time)
 
 
 if __name__ == '__main__':

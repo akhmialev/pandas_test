@@ -1,3 +1,5 @@
+import datetime
+
 import pymongo
 from config import URL_FOR_CONNECT_TO_DB
 from bson import ObjectId
@@ -263,8 +265,82 @@ def check_record_time(id_trainer, date):
 
     return time
 
-def record_in_db(id_trainer, date, time):
-    ...
+
+def check_click(id_user, id_trainer):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'_id': ObjectId(id_user)}
+    user = collection.find_one(query)
+    id_telegram = user['id_telegram']
+
+    collection = db.get_collection('users_check_click')
+    query = {'telegram_id': id_telegram}
+    user = collection.find_one(query)
+    if user:
+        if str(id_trainer) in user['trainer_id'] and user['date'] == str(datetime.datetime.now().date()):
+            return True
+    return False
 
 
+def save_record_to_trainer(id_user, id_trainer, date, time):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'_id': ObjectId(id_user)}
+    user = collection.find_one(query)
+    first_name = user['first_name']
+    username = user['username']
 
+    collection = db.get_collection('trainers')
+    query = {'_id': ObjectId(id_trainer)}
+    updating = {'$addToSet': {'records': {
+        'id_user': str(id_user),
+        'first_name': first_name,
+        'username': username,
+        'date': date,
+        'time': time,
+        'status': ''
+    }}}
+    collection.update_one(query, update=updating)
+
+
+def save_record_to_user(id_user, id_trainer, date, time):
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    query = {'_id': ObjectId(id_trainer)}
+    trainer = collection.find_one(query)
+    name = trainer['name']
+    last_name = trainer['last_name']
+
+    collection = db.get_collection('users')
+    query = {'_id': ObjectId(id_user)}
+    updating = {'$addToSet': {'records': {
+        'trainer_id': id_trainer,
+        'trainer_name': name,
+        'trainer_last_name': last_name,
+        'time': time,
+        'date': date
+    }}}
+    collection.update_one(query, update=updating)
+    return f'вы записаны к {name} {last_name} на {date} с {time}'
+
+
+def save_user_click(id_user, id_trainer):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'_id': ObjectId(id_user)}
+    user = collection.find_one(query)
+    telegram_id = user['id_telegram']
+
+    collection = db.get_collection('users_check_click')
+    query = {'telegram_id': telegram_id}
+    updating = {'$addToSet': {'trainer_id': id_trainer}}
+    user = collection.find_one(query)
+    if user:
+        collection.update_one(query, update=updating)
+    else:
+        collection.insert_one({'telegram_id': str(telegram_id),
+                               'trainer_id': [id_trainer],
+                               'date': str(datetime.datetime.now().date())})
+
+
+save_user_click('6475d442566f7e4c21300f67', '64414eefc9528c17178d1d07')
