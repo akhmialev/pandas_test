@@ -1,8 +1,7 @@
 import datetime
-
 import pymongo
-from config import URL_FOR_CONNECT_TO_DB
 from bson import ObjectId
+from config import URL_FOR_CONNECT_TO_DB
 
 
 def connect_to_mongodb():
@@ -514,7 +513,7 @@ def delete_selected_records(telegram_id, trainer_id):
     """
     db = connect_to_mongodb()
     collection = db.get_collection('users')
-    query = {'id-telegram': str(telegram_id)}
+    query = {'id-telegram_bot': str(telegram_id)}
     update = {'$pull': {'selected_del_record': {'id': trainer_id}}}
     collection.update_one(query, update=update)
 

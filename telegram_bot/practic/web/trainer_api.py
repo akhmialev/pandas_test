@@ -1,4 +1,4 @@
-from bd import *
+from web.bd import *
 
 
 def trainers_in_gym(id_gym):

@@ -1,4 +1,4 @@
-from bd import *
+from web.bd import *
 
 
 def date_record(id_trainer):

@@ -2,8 +2,9 @@ from aiogram import Bot, Dispatcher, types, executor
 from aiogram.utils.exceptions import MessageNotModified
 from aiogram.dispatcher.filters import Text
 
-from bot_v2.keyboards import *
+from keyboards import *
 from config import TOKEN
+from bd import *
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
@@ -344,8 +345,7 @@ async def user_records(msg: types.Message):
         time = str(record['time'])
         date = record['date']
         await bot.send_message(chat_id=msg.from_user.id,
-                               text=f'Вы записаны к {trainer_name} {date}'
-                                    f' с {time.split("-")[0]} до {time.split("-")[1]}')
+                               text=f'Вы записаны к {trainer_name} {date} с {time}')
     await bot.send_message(chat_id=msg.from_user.id, text='Стартовое меню', reply_markup=menu_st)
 
 
@@ -362,7 +362,7 @@ async def delete_record(msg: types.Message):
 @dp.message_handler(commands=['привязать', 'cancel'])
 async def process_message(msg: types.Message):
     """
-        Функция для меню которое привязывает к тг юзеру crm юзера
+        Функция для меню которое привязывает к тг юзеру web юзера
     """
     if msg.text == '/привязать':
         await msg.reply('Введите ваш ID:')
@@ -418,4 +418,5 @@ async def delete_records(cb: types.CallbackQuery):
     await bot.send_message(chat_id=cb.from_user.id, text='hi')
 
 
-
+if __name__ == '__main__':
+    executor.start_polling(dp, on_startup=on_startup)

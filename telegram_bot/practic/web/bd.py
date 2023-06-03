@@ -1,8 +1,8 @@
 import datetime
-
 import pymongo
-from config import URL_FOR_CONNECT_TO_DB
 from bson import ObjectId
+
+from web.config import URL_FOR_CONNECT_TO_DB
 
 
 def connect_to_mongodb():

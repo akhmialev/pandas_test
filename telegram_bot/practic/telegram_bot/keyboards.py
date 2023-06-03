@@ -1,5 +1,4 @@
 import locale
-
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
 from bd import *
 
