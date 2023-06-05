@@ -189,7 +189,7 @@ async def record_finish(id_user, id_trainer, date, time):
     ## Записывает к тренеру.<br>
     id_user - ID пользователя <br>
     id_trainer - ID тренера <br>
-    date - выбранный день записи <br>
+    date - выбранный день записи в формате (10.06 , 11.07 и т.п.) <br>
     time - выбранное время записи в формате(10:00-11:00)
     """
     return finish_record(id_user, id_trainer, date, time)

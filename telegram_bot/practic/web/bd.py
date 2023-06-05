@@ -248,6 +248,14 @@ def delete_trainer_in_db(id_user, id_gym, id_trainer):
         return f'{e}'
 
 
+def get_trainer(id_trainer):
+    db = connect_to_mongodb()
+    collection = db.get_collection('trainers')
+    query = {'_id': ObjectId(id_trainer)}
+    trainer = collection.find_one(query)
+    return trainer
+
+
 def send_data(id_trainer):
     try:
         db = connect_to_mongodb()
