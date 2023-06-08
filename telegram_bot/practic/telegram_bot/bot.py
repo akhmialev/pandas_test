@@ -23,7 +23,6 @@ async def start_bot(msg: types.Message):
     telegram_id = msg.from_user.id
     username = msg.from_user.username
     first_name = msg.from_user.first_name
-    # проверка есть ли юзер в нашей бд
     if user_in_db(telegram_id):
         menu_st = create_start_menu()
         await bot.send_message(chat_id=msg.from_user.id, text='Стартовое меню', reply_markup=menu_st)
@@ -375,15 +374,23 @@ async def process_message(msg: types.Message):
 @dp.message_handler()
 async def bind_id(msg: types.Message):
     """
-        Функция для меню для привязки юзера и вывода ответа
+    Функция для меню для привязки юзера и вывода ответа и проверки есть-ли он в системе при написании чего-либо в чат
     """
     telegram_id = msg.from_user.id
-    if len(msg.text) == 24:
-        crm_id = msg.text
-        if bind_user(telegram_id, crm_id):
-            await bot.send_message(chat_id=msg.from_user.id, text='Вы успешно привязали ID')
-        else:
-            await bot.send_message(chat_id=msg.from_user.id, text='Ошибка, неправильный ID')
+    username = msg.from_user.username
+    first_name = msg.from_user.first_name
+    if not user_in_db(telegram_id):
+        await bot.send_message(chat_id=msg.from_user.id, text='Вас нету в системе')
+        create_user_in_db(telegram_id, username, first_name)
+        menu_fr = create_first_menu(telegram_id)
+        await bot.send_message(chat_id=msg.from_user.id, text='Выберите залы', reply_markup=menu_fr)
+    else:
+        if len(msg.text) == 24:
+            crm_id = msg.text
+            if bind_user(telegram_id, crm_id):
+                await bot.send_message(chat_id=msg.from_user.id, text='Вы успешно привязали ID')
+            else:
+                await bot.send_message(chat_id=msg.from_user.id, text='Ошибка, неправильный ID')
 
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('_'))
