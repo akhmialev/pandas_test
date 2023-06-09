@@ -1,3 +1,8 @@
+from datetime import datetime, timedelta
+import jwt
+
+from web.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
+
 from web.bd import get_trainer, send_user
 
 
@@ -55,4 +60,21 @@ def check_user_id(id_user):
         else:
             return False
     else:
+        return False
+
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({'exp': expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def verify_token(credentials):
+    token = credentials.credentials
+    try:
+        jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return True
+    except jwt.PyJWTError:
         return False

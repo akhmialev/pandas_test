@@ -2,12 +2,16 @@ from web.bd import *
 from web.checks import *
 
 
-def date_record(id_trainer):
+def date_record(id_trainer, credentials):
+    if not verify_token(credentials):
+        return {'message:': 'Invalid token'}
     date = send_data(id_trainer)
     return {'date': date}
 
 
-def time_record(id_trainer, date):
+def time_record(id_trainer, date, credentials):
+    if not verify_token(credentials):
+        return {'message:': 'Invalid token'}
     if check_id_trainer(id_trainer):
         if check_data(date):
             time = send_time(id_trainer, date)
@@ -32,7 +36,10 @@ def time_record(id_trainer, date):
         return {'message': f'Invalid date. Your date: {date}, success format dd.mm'}
     return {'message': f'Invalid id_trainer'}
 
-def finish_record(id_user, id_trainer, date, time):
+
+def finish_record(id_user, id_trainer, date, time, credentials):
+    if not verify_token(credentials):
+        return {'message:': 'Invalid token'}
     if check_user_id(id_user):
         if check_id_trainer(id_trainer):
             if check_time(time):

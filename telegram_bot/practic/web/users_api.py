@@ -1,12 +1,15 @@
 from web.bd import *
+from web.checks import create_access_token, verify_token
 
 
-def get_users():
+def get_users(credentials):
     """
         Функция для вывода всех пользователей
     """
     users = send_users()
     data = []
+    if not verify_token(credentials):
+        return {'message:': 'Invalid token'}
     for user in users:
         data.append({
             '_id': str(user['_id']),
@@ -15,15 +18,17 @@ def get_users():
             'id_telegram': user['id_telegram'],
             'gyms': user['gyms'],
             'records': user['records'],
-            'crm_id': user['crm_id']
+            'person': user['person']
         })
     return data
 
 
-def get_user(user_id):
+def get_user(user_id, credentials):
     """
         Функция для вывода пользователя по ID
     """
+    if not verify_token(credentials):
+        return {'message:': 'Invalid token'}
     try:
         user = send_user(str(user_id))
         data = {
@@ -70,7 +75,9 @@ def add_user(email, password, name, secondname, phone, age):
         return {'created_user': 'error'}
 
 
-def delete(user_id):
+def delete(user_id, credentials):
+    if not verify_token(credentials):
+        return {'message:': 'Invalid token'}
     user = delete_user(user_id)
     if user:
         return {'delete': 'success'}
@@ -78,13 +85,15 @@ def delete(user_id):
         return {'delete': 'id not in db'}
 
 
-def user_update(user_id, name, secondname, phone, age):
+def user_update(user_id, name, secondname, phone, age, credentials):
+    if not verify_token(credentials):
+        return {'message:': 'Invalid token'}
     return update(user_id, name, secondname, phone, age)
 
 
 def user_login(email, password):
     if find_user(email, password):
-        return True
+        token = create_access_token({'sum': email})
+        return {"access_token": token}
     else:
-        return False
-
+        return {'message': 'access invalid'}
