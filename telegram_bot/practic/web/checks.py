@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import jwt
 
-from web.config import ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY, ALGORITHM
+from web.config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, SECRET_KEY, ALGORITHM
 
 from web.bd import get_trainer, send_user
 
@@ -63,10 +63,26 @@ def check_user_id(id_user):
         return False
 
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
+def create_access_token(username, user_id,user_type):
+    user = {
+        'username': username,
+        'user_id': str(user_id),
+        'user_type': user_type
+    }
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({'exp': expire})
+    to_encode = {'user': user, 'exp': expire}
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def create_refresh_token(username, user_id,user_type):
+    user = {
+        'username': username,
+        'user_id': str(user_id),
+        'user_type': user_type
+    }
+    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode = {'user': user, 'exp': expire}
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -74,7 +90,7 @@ def create_access_token(data: dict):
 def verify_token(credentials):
     token = credentials.credentials
     try:
-        jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return True
+        decoded_token = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return decoded_token
     except jwt.PyJWTError:
         return False

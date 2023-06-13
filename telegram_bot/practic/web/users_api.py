@@ -1,5 +1,6 @@
 from web.bd import *
-from web.checks import create_access_token, verify_token
+from web.checks import create_access_token, verify_token, create_refresh_token
+from fastapi import HTTPException
 
 
 def get_users(credentials):
@@ -93,7 +94,22 @@ def user_update(user_id, name, secondname, phone, age, credentials):
 
 def user_login(email, password):
     if find_user(email, password):
-        token = create_access_token({'sum': email})
-        return {"access_token": token}
+        username, user_id, user_type = user_data(email)
+        token = create_access_token(username, user_id, user_type)
+        refresh_token = create_refresh_token(username, user_id, user_type)
+        return {"access_token": token,
+                'refresh_token': refresh_token}
     else:
         return {'message': 'access invalid'}
+
+
+def refresh(credentials):
+    decoded_token = verify_token(credentials)
+    if not decoded_token:
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
+    data = decoded_token.get('user')
+    username = data['username']
+    user_id = data['user_id']
+    user_type = data['user_type']
+    access_token = create_access_token(username, user_id, user_type)
+    return {"access_token": access_token, 'data': data}

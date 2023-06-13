@@ -14,6 +14,8 @@ security = HTTPBearer()
 def register(email: str, password: str, name=None, secondname=None, phone=None, age=None):
     """
         ## Регистрация пользователей
+        ## Регистрация пользователей
+        ## Регистрация пользователей
         При регистрации дается ID для привязки аккаунта к телеграмму.<br>
         Обязательные поля:<br>
         -email - почта<br>
@@ -35,6 +37,19 @@ def login(email: str, password: str):
      password - почта
     """
     return user_login(email, password)
+
+
+@app.post('/web/refresh', tags=['Register'])
+def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """
+    ## Создает рефрешь токен доступный 30 дней<br>
+    credentials: токен<br>
+    ## Отдает данные пользователя:<br>
+    username: имя пользователя<br>
+    user_id: id пользователя в бд<br>
+    user_type: роль пользователя например - админ
+    """
+    return refresh(credentials)
 
 
 @app.get('/web/users/', tags=['User'])

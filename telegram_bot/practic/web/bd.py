@@ -76,6 +76,16 @@ def update(user_id, name, secondname, phone, age):
         return {'error': str(e)}
 
 
+def user_data(email):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'person.email': email}
+    user = collection.find_one(query)
+    return user['username'], user['_id'], user['type']
+
+
+
+
 def find_user(email, password):
     try:
         db = connect_to_mongodb()
