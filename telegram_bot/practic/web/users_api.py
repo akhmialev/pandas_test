@@ -1,5 +1,5 @@
 from web.bd import *
-from web.checks import create_access_token, verify_token, create_refresh_token
+from web.checks import *
 from fastapi import HTTPException
 
 
@@ -47,33 +47,38 @@ def get_user(user_id, credentials):
 
 
 def add_user(email, password, name, secondname, phone, age):
-    user = {
-        'type': [],
-        "username": '',
-        "first_name": '',
-        "id_telegram": '',
-        "gyms": [],
-        'records': [],
-        'person': {
-            'email': email,
-            'password': password,
-            'name': name,
-            'secondname': secondname,
-            'phone': phone,
-            'age': age
-        },
-        'selected_gyms': [],
-        'selected_type_gyms': [],
-        'selected_trainers': [],
-        'selected_del_record': [],
-        'crm_id': ''
-    }
-    user_id = create_user(user)
-    if user_id:
-        return {'created_user': 'success',
-                'id': user_id}
-    else:
-        return {'created_user': 'error'}
+    if not check_email(email):
+        if not check_phone(phone):
+            user = {
+                'type': [],
+                "username": '',
+                "first_name": '',
+                "id_telegram": '',
+                "gyms": [],
+                'records': [],
+                'person': {
+                    'email': email,
+                    'password': password,
+                    'name': name,
+                    'secondname': secondname,
+                    'phone': phone,
+                    'age': age
+                },
+                'selected_gyms': [],
+                'selected_type_gyms': [],
+                'selected_trainers': [],
+                'selected_del_record': [],
+                'crm_id': ''
+            }
+            user_id = create_user(user)
+            if user_id:
+                return {'created_user': 'success',
+                        'id': user_id}
+            else:
+                return {'created_user': 'error'}
+        tg_reg_in_db(email, password, phone, name, secondname, age)
+        return {'created_user': 'success'}
+    return {'message': "It's email is already used"}
 
 
 def delete(user_id, credentials):

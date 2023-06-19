@@ -3,7 +3,7 @@ import jwt
 
 from web.config import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS, SECRET_KEY, ALGORITHM
 
-from web.bd import get_trainer, send_user
+from web.bd import get_trainer, send_user, connect_to_mongodb
 
 
 def check_data(data):
@@ -94,3 +94,21 @@ def verify_token(credentials):
         return decoded_token
     except jwt.PyJWTError:
         return False
+
+
+def check_phone(phone):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'person.phone': str(phone)}
+    user = collection.find_one(query)
+    if user:
+        return True
+
+
+def check_email(email):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'person.email': str(email)}
+    user = collection.find_one(query)
+    if user:
+        return True

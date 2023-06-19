@@ -84,8 +84,6 @@ def user_data(email):
     return user['username'], user['_id'], user['type']
 
 
-
-
 def find_user(email, password):
     try:
         db = connect_to_mongodb()
@@ -405,3 +403,18 @@ def save_user_click(id_user, id_trainer):
                                    'date': str(datetime.datetime.now().date())})
     except Exception as e:
         return f'{e}'
+
+
+def tg_reg_in_db(email, password, phone, name, secondname, age):
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'person.phone': str(phone)}
+    updating = {'$set': {'person': {
+        'email': email,
+        'password': password,
+        'name': name,
+        'phone': phone,
+        'secondname': secondname,
+        'age': age
+    }}}
+    collection.update_one(query, updating)
