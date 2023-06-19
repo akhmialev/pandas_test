@@ -11,7 +11,7 @@ security = HTTPBearer()
 
 
 @app.post('/web/user/register', tags=['Register'])
-def register(email: str, password: str, name=None, secondname=None, phone=None, age=None):
+def register(email: str, password: str, phone: str, name=None, secondname=None, age=None):
     """
         ## Регистрация пользователей
         ## Регистрация пользователей
@@ -20,10 +20,10 @@ def register(email: str, password: str, name=None, secondname=None, phone=None, 
         Обязательные поля:<br>
         -email - почта<br>
         -password - пароль<br><br>
+        -phone - телефон<br>
         Необязательные поля:<br>
         -name - Имя пользователя<br>
         -secondname - Фамилия<br>
-        -phone - телефон<br>
         -age - возраст<br>
     """
     return add_user(email, password, name, secondname, phone, age)

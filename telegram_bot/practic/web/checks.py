@@ -63,7 +63,7 @@ def check_user_id(id_user):
         return False
 
 
-def create_access_token(username, user_id,user_type):
+def create_access_token(username, user_id, user_type):
     user = {
         'username': username,
         'user_id': str(user_id),
@@ -75,7 +75,7 @@ def create_access_token(username, user_id,user_type):
     return encoded_jwt
 
 
-def create_refresh_token(username, user_id,user_type):
+def create_refresh_token(username, user_id, user_type):
     user = {
         'username': username,
         'user_id': str(user_id),
