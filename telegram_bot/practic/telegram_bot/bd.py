@@ -547,3 +547,29 @@ def bind_user(telegram_id, crm_id):
         return True
     else:
         return False
+
+
+def user_have_phone(telegram_id):
+    """
+    Проверяем есть ли телефон у пользователя
+    """
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    user = collection.find_one(query)
+    if user['person']['phone']:
+        return True
+    return False
+
+
+def save_phone_in_db(telegram_id, phone_number):
+    """
+    Сохраняем телефон пользователя в бд
+    """
+    db = connect_to_mongodb()
+    collection = db.get_collection('users')
+    query = {'id_telegram': str(telegram_id)}
+    update = {'$set': {'person.phone': str(phone_number)}}
+    collection.update_one(query, update=update)
+
+

@@ -23,8 +23,9 @@ async def start_bot(msg: types.Message):
     telegram_id = msg.from_user.id
     username = msg.from_user.username
     first_name = msg.from_user.first_name
+
     if user_in_db(telegram_id):
-        menu_st = create_start_menu()
+        menu_st = create_start_menu(telegram_id)
         await bot.send_message(chat_id=msg.from_user.id, text='Стартовое меню', reply_markup=menu_st)
 
     else:
@@ -296,7 +297,7 @@ async def record_to_trainer(cb: types.CallbackQuery):
     time = cb.data.split('_')[-1]
     first_name = cb.from_user.first_name
     username = cb.from_user.username
-    menu_st = create_start_menu()
+    menu_st = create_start_menu(telegram_id)
 
     trainer_name, trainer_last_name = get_user_name(trainer_id)
     text_message = f'Вы записаны к {trainer_name} {trainer_last_name} на {day}' \
@@ -333,12 +334,26 @@ async def button_back(cb: types.CallbackQuery):
                                     text='Вы вернулись в назад')
 
 
+@dp.message_handler(content_types=types.ContentType.CONTACT)
+async def link_phone(msg: types.Message):
+    """
+    Функция добавляет телефон пользователя в базу данных
+    """
+    telegram_id = msg.from_user.id
+    phone_number = msg.contact.phone_number
+    save_phone_in_db(telegram_id, phone_number)
+    menu_st = create_start_menu(telegram_id)
+
+    await msg.reply(text=f'Ваш телефон успешно привязан')
+    await bot.send_message(chat_id=msg.from_user.id, text='Стартовое меню', reply_markup=menu_st)
+
+
 @dp.message_handler(Text(equals='Показать мои записи'))
 async def user_records(msg: types.Message):
     # надо добавить проверку что если нет записей то вывести ответ что у вас нет еще записей
     telegram_id = msg.from_user.id
     records = send_user_record(telegram_id)
-    menu_st = create_start_menu()
+    menu_st = create_start_menu(telegram_id)
     for record in records:
         trainer_name = f"{record['trainer_name']} {record['trainer_last_name']}"
         time = str(record['time'])
@@ -395,7 +410,8 @@ async def bind_id(msg: types.Message):
 
 @dp.callback_query_handler(lambda cb: cb.data.startswith('_'))
 async def button_back_in_delete_menu(cb: types.CallbackQuery):
-    menu_st = create_start_menu()
+    telegram_id = cb.from_user.id
+    menu_st = create_start_menu(telegram_id)
     await bot.edit_message_reply_markup(chat_id=cb.from_user.id, message_id=cb.message.message_id,
                                         reply_markup=InlineKeyboardMarkup())
     await bot.send_message(chat_id=cb.from_user.id, text='Стартовое меню', reply_markup=menu_st)

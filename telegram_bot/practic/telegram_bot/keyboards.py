@@ -5,7 +5,7 @@ from bd import *
 stack = []
 
 
-def create_start_menu():
+def create_start_menu(telegram_id):
     """
         Функция для создания стартового меню
     """
@@ -13,6 +13,9 @@ def create_start_menu():
     b1 = KeyboardButton(text='Записаться')
     # b2 = KeyboardButton(text='Удалить запись')
     b4 = KeyboardButton(text='Показать мои записи')
+    if not user_have_phone(telegram_id):
+        b5 = KeyboardButton(text='Привязать телефон', request_contact=True)
+        return kb_menu.add(b1).add(b4).add(b5)
     return kb_menu.add(b1).add(b4)
 
 
