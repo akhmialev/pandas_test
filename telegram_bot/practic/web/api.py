@@ -37,11 +37,10 @@ def login(email: str, password: str):
     return user_login(email, password)
 
 
-
 @app.post('/web/refresh', tags=['Register'])
 def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
-    ## Создает рефрешь токен доступный 30 дней<br>
+    ## Создает ре фреш токен доступный 30 дней<br>
     credentials: токен<br>
     ## Отдает данные пользователя:<br>
     username: имя пользователя<br>
